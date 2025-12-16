@@ -17,6 +17,7 @@ import { PostsQueryParams } from './input-dto/posts.query-params.dto';
 import type { UpdatePostDto } from '../dto/update-post.dto';
 import { CommentsQueryParams } from '../../comments/api/input-dto/comments.query-params.dto';
 import { CommentsQueryRepository } from '../../comments/infrastructure/query/comments.query-repository';
+import { IdInputDTO } from 'src/core/dto/id-params.dto';
 
 @Controller('posts')
 export class PostsController {
@@ -35,7 +36,7 @@ export class PostsController {
     return await this.postsQueryRepository.findOne(postId);
   }
   @Get(':id')
-  async getOne(@Param('id') id: string) {
+  async getOne(@Param() { id }: IdInputDTO) {
     const post = await this.postsQueryRepository.findOne(id);
     if (!post) {
       throw new NotFoundException('Post not found');
@@ -44,13 +45,13 @@ export class PostsController {
   }
   @Put(':id')
   @HttpCode(204)
-  async update(@Param('id') id: string, @Body() dto: UpdatePostDto) {
+  async update(@Param() { id }: IdInputDTO, @Body() dto: UpdatePostDto) {
     return await this.postsService.update(id, dto);
   }
 
   @Delete(':id')
   @HttpCode(204)
-  async delete(@Param('id') id: string) {
+  async delete(@Param() { id }: IdInputDTO) {
     return await this.postsService.delete(id);
   }
 
@@ -58,7 +59,7 @@ export class PostsController {
   @Get(':id/comments')
   async getComments(
     @Query() query: CommentsQueryParams,
-    @Param('id') id: string,
+    @Param() { id }: IdInputDTO,
   ) {
     return await this.commentsQueryRepository.findAllbyId(id, query);
   }

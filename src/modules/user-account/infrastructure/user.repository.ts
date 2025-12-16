@@ -10,10 +10,34 @@ class UserRepository {
     private UserModel: UserModelType,
   ) {}
   async save(user: UserDocument) {
-    return await user.save();
+    await user.save();
   }
   async getUserById(id: string): Promise<UserDocument | null> {
     return await this.UserModel.findOne({ _id: id, deletedAt: null });
+  }
+  async getUserByLoginOrEmail(
+    login: string,
+    email: string,
+  ): Promise<UserDocument | null> {
+    return await this.UserModel.findOne({
+      $or: [{ login }, { email }],
+      deletedAt: null,
+    });
+  }
+  async getuserByEmail(email: string) {
+    return await this.UserModel.findOne({ email, deletedAt: null });
+  }
+  async findByConfirmationCode(code: string) {
+    return await this.UserModel.findOne({
+      'confirmation.confirmationCode': code,
+      deletedAt: null,
+    });
+  }
+  async findByRecoveryCode(recoveryCode: string) {
+    return await this.UserModel.findOne({
+      recoveryCode: recoveryCode,
+      deletedAt: null,
+    });
   }
 }
 

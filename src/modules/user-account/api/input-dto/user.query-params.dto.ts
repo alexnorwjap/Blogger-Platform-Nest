@@ -1,4 +1,5 @@
 import { BaseQueryParams } from 'src/core/dto/base.query-params';
+import { IsOptional } from 'class-validator';
 
 enum SortBy {
   CreatedAt = 'createdAt',
@@ -7,7 +8,10 @@ enum SortBy {
 }
 
 export class UserQueryParams extends BaseQueryParams {
+  @IsOptional()
   sortBy: SortBy = SortBy.CreatedAt;
+  @IsOptional()
   searchLoginTerm: string | null = null;
+  @IsOptional()
   searchEmailTerm: string | null = null;
 }
