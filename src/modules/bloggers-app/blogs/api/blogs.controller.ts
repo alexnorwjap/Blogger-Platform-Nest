@@ -18,6 +18,7 @@ import { BlogsQueryParams } from './input-dto/blogs.query-params';
 import { PostsQueryParams } from '../../posts/api/input-dto/posts.query-params.dto';
 import type { CreatePostForBlogDto } from '../../posts/dto/create-post.dto';
 import { PostsQueryRepository } from '../../posts/infrastructure/query/posts.query-repository';
+import { IdInputDTO } from '../../../../core/dto/id-params.dto';
 
 @Controller('blogs')
 export class BlogsController {
@@ -33,7 +34,7 @@ export class BlogsController {
   }
 
   @Get(':id')
-  async findOne(@Param('id') id: string) {
+  async findOne(@Param() { id }: IdInputDTO) {
     const blog = await this.blogsQueryRepository.findOne(id);
     if (!blog) {
       throw new NotFoundException('Blog not found');
@@ -49,20 +50,23 @@ export class BlogsController {
 
   @Put(':id')
   @HttpCode(204)
-  async update(@Param('id') id: string, @Body() updateBlogDto: UpdateBlogDto) {
+  async update(
+    @Param() { id }: IdInputDTO,
+    @Body() updateBlogDto: UpdateBlogDto,
+  ) {
     return await this.blogsService.update(id, updateBlogDto);
   }
 
   @Delete(':id')
   @HttpCode(204)
-  async remove(@Param('id') id: string) {
+  async remove(@Param() { id }: IdInputDTO) {
     return await this.blogsService.remove(id);
   }
 
   // posts for blog
   @Get(':id/posts')
   async findPostsForBlog(
-    @Param('id') id: string,
+    @Param() { id }: IdInputDTO,
     @Query() query: PostsQueryParams,
   ) {
     const blog = await this.blogsService.getBlogById(id);
@@ -74,7 +78,7 @@ export class BlogsController {
 
   @Post(':id/posts')
   async createPostForBlog(
-    @Param('id') id: string,
+    @Param() { id }: IdInputDTO,
     @Body() dto: CreatePostForBlogDto,
   ) {
     const postId = await this.blogsService.createPostForBlog(id, dto);

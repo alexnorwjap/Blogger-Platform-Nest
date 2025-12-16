@@ -5,6 +5,7 @@ import { UserViewDto } from '../../api/view-dto/user.view-dto';
 import { UserQueryParams } from '../../api/input-dto/user.query-params.dto';
 import { PaginatedViewDto } from 'src/core/dto/base.paginated.view-dto';
 import { Injectable } from '@nestjs/common';
+import { MeViewDto } from '../../api/view-dto/me.view-dto';
 
 type UserFilter = {
   deletedAt: Date | null;
@@ -21,7 +22,7 @@ export class UserQueryRepository {
     private readonly userModel: UserModelType,
   ) {}
   async findOne(id: string): Promise<UserViewDto | null> {
-    const user = await this.userModel.findOne({ _id: id });
+    const user = await this.userModel.findOne({ _id: id, deletedAt: null });
     if (!user) return null;
     return UserViewDto.mapToView(user);
   }
@@ -29,6 +30,7 @@ export class UserQueryRepository {
   async findAll(
     query: UserQueryParams,
   ): Promise<PaginatedViewDto<UserViewDto[]>> {
+    console.log(query);
     const filter: UserFilter = {
       deletedAt: null,
     };
@@ -60,5 +62,11 @@ export class UserQueryRepository {
       size: query.pageSize,
       totalCount: count,
     });
+  }
+
+  async getMe(id: string): Promise<MeViewDto | null> {
+    const user = await this.userModel.findOne({ _id: id, deletedAt: null });
+    if (!user) return null;
+    return MeViewDto.mapToView(user);
   }
 }
