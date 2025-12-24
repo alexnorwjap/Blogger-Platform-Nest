@@ -11,7 +11,7 @@ import { AllHttpExceptionsFilter } from './core/exceptions/filters/all-exception
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { ThrottlerModule } from '@nestjs/throttler';
-import { JwtModule } from '@nestjs/jwt';
+import { CoreModule } from './core/core.module';
 
 @Module({
   imports: [
@@ -19,11 +19,7 @@ import { JwtModule } from '@nestjs/jwt';
       isGlobal: true,
       envFilePath: '.env',
     }),
-    JwtModule.register({
-      global: true,
-      secret: process.env.JWT_SECRET,
-      signOptions: { expiresIn: '5m' },
-    }),
+
     BloggersAppModule,
     UserAccountsModule,
     TestingModule,
@@ -36,6 +32,7 @@ import { JwtModule } from '@nestjs/jwt';
     }),
     NotificationsModule,
     ThrottlerModule.forRoot([{ ttl: 10000, limit: 5 }]),
+    CoreModule,
   ],
   controllers: [AppController],
   providers: [
