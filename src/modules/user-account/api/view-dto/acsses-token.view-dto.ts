@@ -1,5 +1,6 @@
-type AccessToken = {
+type AccessTokenViewDto = {
   accessToken: string;
+  refreshToken: string;
 };
 
-export type { AccessToken };
+export type { AccessTokenViewDto };

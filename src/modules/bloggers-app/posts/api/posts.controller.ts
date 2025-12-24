@@ -7,60 +7,117 @@ import {
   Get,
   Delete,
   HttpCode,
-  NotFoundException,
   Query,
+  UseGuards,
+  HttpStatus,
 } from '@nestjs/common';
-import type { CreatePostDto } from '../dto/create-post.dto';
-import { PostsService } from '../application/posts.service';
 import { PostsQueryRepository } from '../infrastructure/query/posts.query-repository';
 import { PostsQueryParams } from './input-dto/posts.query-params.dto';
-import type { UpdatePostDto } from '../dto/update-post.dto';
 import { CommentsQueryParams } from '../../comments/api/input-dto/comments.query-params.dto';
 import { CommentsQueryRepository } from '../../comments/infrastructure/query/comments.query-repository';
 import { IdInputDTO } from 'src/core/dto/id-params.dto';
-
+import { CreatePostCommand } from '../application/usecases/create-post.usecase';
+import { CommandBus, QueryBus } from '@nestjs/cqrs';
+import { InputPostReqBodyDto } from './input-dto/input.req-body.dto';
+import { UpdatePostCommand } from '../application/usecases/update-post.usecase';
+import { DeletePostCommand } from '../application/usecases/delete-post.usecase';
+import { JwtAuthGuard } from 'src/modules/user-account/guards/bearer/jwt-auth.guard';
+import ExtractUserFromRequest from 'src/modules/user-account/guards/decorators/extract-user-from-req.decorators';
+import UserContextDto from 'src/modules/user-account/guards/dto/user.context.dto';
+import { InputCommentDto } from '../../comments/api/input-dto/comment.dto';
+import { CreateCommentCommand } from '../../comments/application/usecases/create-comment.usecase';
+import { BasicAuthGuard } from 'src/modules/user-account/guards/basic/basic-auth.guard';
+import { UpdateLikeInputDto } from '../../../../core/dto/update-like-input.dto';
+import { SetLikeStatusForPostCommand } from '../application/usecases/set-like-status-for-post.usecase';
+import { JwtOptionalAuthGuard } from 'src/modules/user-account/guards/bearer/jwt-optional-auth-guard';
+import { GetPostByIdQuery } from '../application/queries/getPostById.query';
 @Controller('posts')
 export class PostsController {
   constructor(
-    private readonly postsService: PostsService,
     private readonly postsQueryRepository: PostsQueryRepository,
     private readonly commentsQueryRepository: CommentsQueryRepository,
+    private readonly commandBus: CommandBus,
+    private readonly queryBus: QueryBus,
   ) {}
   @Get()
-  async findAll(@Query() query: PostsQueryParams) {
-    return await this.postsQueryRepository.findAll(null, query);
+  @UseGuards(JwtOptionalAuthGuard)
+  async getAll(
+    @Query() query: PostsQueryParams,
+    @ExtractUserFromRequest() user: UserContextDto | null,
+  ) {
+    return await this.postsQueryRepository.findAll(null, query, user);
   }
   @Post()
-  async create(@Body() createPostDto: CreatePostDto) {
-    const postId = await this.postsService.create(createPostDto);
-    return await this.postsQueryRepository.findOne(postId);
+  @UseGuards(BasicAuthGuard)
+  async create(@Body() dto: InputPostReqBodyDto) {
+    const { postId } = await this.commandBus.execute(
+      new CreatePostCommand(dto),
+    );
+    return await this.postsQueryRepository.findOne(postId, null);
   }
+
   @Get(':id')
-  async getOne(@Param() { id }: IdInputDTO) {
-    const post = await this.postsQueryRepository.findOne(id);
-    if (!post) {
-      throw new NotFoundException('Post not found');
-    }
-    return post;
+  @UseGuards(JwtOptionalAuthGuard)
+  async getOne(
+    @Param() { id }: IdInputDTO,
+    @ExtractUserFromRequest() user: UserContextDto | null,
+  ) {
+    return await this.postsQueryRepository.findOne(id, user);
   }
+
   @Put(':id')
+  @UseGuards(BasicAuthGuard)
   @HttpCode(204)
-  async update(@Param() { id }: IdInputDTO, @Body() dto: UpdatePostDto) {
-    return await this.postsService.update(id, dto);
+  async update(@Param() { id }: IdInputDTO, @Body() dto: InputPostReqBodyDto) {
+    return await this.commandBus.execute(new UpdatePostCommand(id, dto));
   }
 
   @Delete(':id')
+  @UseGuards(BasicAuthGuard)
   @HttpCode(204)
   async delete(@Param() { id }: IdInputDTO) {
-    return await this.postsService.delete(id);
+    return await this.commandBus.execute(new DeletePostCommand(id));
+  }
+
+  @Put(':id/like-status')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @UseGuards(JwtAuthGuard)
+  async updateLikeStatus(
+    @Param() { id }: IdInputDTO,
+    @Body() dto: UpdateLikeInputDto,
+    @ExtractUserFromRequest() user: UserContextDto,
+  ) {
+    return await this.commandBus.execute(
+      new SetLikeStatusForPostCommand({
+        postId: id,
+        likeStatus: dto.likeStatus,
+        userId: user.id,
+      }),
+    );
   }
 
   // comments for posts
   @Get(':id/comments')
+  @UseGuards(JwtOptionalAuthGuard)
   async getComments(
     @Query() query: CommentsQueryParams,
     @Param() { id }: IdInputDTO,
+    @ExtractUserFromRequest() user: UserContextDto | null,
   ) {
-    return await this.commentsQueryRepository.findAllbyId(id, query);
+    await this.queryBus.execute(new GetPostByIdQuery(id));
+    return await this.commentsQueryRepository.findAllbyId(id, query, user);
+  }
+
+  @Post(':id/comments')
+  @UseGuards(JwtAuthGuard)
+  async createComment(
+    @Param() { id }: IdInputDTO,
+    @Body() dto: InputCommentDto,
+    @ExtractUserFromRequest() user: UserContextDto,
+  ) {
+    const { commentId } = await this.commandBus.execute(
+      new CreateCommentCommand({ ...dto, postId: id, userId: user.id }),
+    );
+    return await this.commentsQueryRepository.findOne(commentId, null);
   }
 }

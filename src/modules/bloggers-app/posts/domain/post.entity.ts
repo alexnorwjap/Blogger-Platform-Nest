@@ -3,18 +3,31 @@ import { HydratedDocument, Model } from 'mongoose';
 import { CreatePostDto } from '../dto/create-post.dto';
 import { UpdatePostDto } from '../dto/update-post.dto';
 
-type NewestLikes = {
+@Schema({ _id: false })
+class NewestLikes {
+  @Prop({ type: Date, required: true })
   addedAt: Date;
+  @Prop({ type: String, required: true })
   userId: string;
+  @Prop({ type: String, required: true })
   login: string;
-}[];
-
-type ExtendedLikesInfo = {
+}
+@Schema({ _id: false })
+class ExtendedLikesInfo {
+  @Prop({ type: Number, required: true, min: 0, default: 0 })
   likesCount: number;
+  @Prop({ type: Number, required: true, min: 0, default: 0 })
   dislikesCount: number;
+  @Prop({
+    type: String,
+    enum: ['None', 'Like', 'Dislike'],
+    required: true,
+    default: 'None',
+  })
   myStatus: string;
-  newestLikes: NewestLikes;
-};
+  @Prop({ type: [NewestLikes], required: true, default: [] })
+  newestLikes: NewestLikes[];
+}
 
 @Schema({ timestamps: true })
 class Post {
@@ -37,29 +50,8 @@ class Post {
   blogName: string;
 
   @Prop({
-    type: {
-      likesCount: { type: Number, required: true, default: 0 },
-      dislikesCount: { type: Number, required: true, default: 0 },
-      myStatus: {
-        type: String,
-        enum: ['None', 'Like', 'Dislike'],
-        required: true,
-        default: 'None',
-      },
-      newestLikes: {
-        type: [
-          {
-            addedAt: { type: Date, required: true },
-            userId: { type: String, required: true },
-            login: { type: String, required: true },
-          },
-        ],
-        required: true,
-        default: [],
-      },
-    },
+    type: ExtendedLikesInfo,
     required: true,
-    _id: false,
   })
   extendedLikesInfo: ExtendedLikesInfo;
 
@@ -91,6 +83,37 @@ class Post {
 
   delete(): void {
     this.deletedAt = new Date();
+  }
+
+  applyFirstReaction(likeStatus: string): void {
+    if (likeStatus === 'Like') {
+      this.extendedLikesInfo.likesCount++;
+    } else if (likeStatus === 'Dislike') {
+      this.extendedLikesInfo.dislikesCount++;
+    }
+  }
+
+  updateLikesCount(previousStatus: string, newStatus: string): void {
+    const getStatusDelta = (status: string) => ({
+      likes: status === 'Like' ? 1 : 0,
+      dislikes: status === 'Dislike' ? 1 : 0,
+    });
+
+    const previousDelta = getStatusDelta(previousStatus);
+    const newDelta = getStatusDelta(newStatus);
+
+    this.extendedLikesInfo.likesCount += newDelta.likes - previousDelta.likes;
+    this.extendedLikesInfo.dislikesCount +=
+      newDelta.dislikes - previousDelta.dislikes;
+
+    this.extendedLikesInfo.likesCount = Math.max(
+      0,
+      this.extendedLikesInfo.likesCount,
+    );
+    this.extendedLikesInfo.dislikesCount = Math.max(
+      0,
+      this.extendedLikesInfo.dislikesCount,
+    );
   }
 }
 

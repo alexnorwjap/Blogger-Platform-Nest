@@ -11,13 +11,20 @@ export class CommentsViewDto {
   likesInfo: LikesInfo;
   createdAt: Date;
 
-  static mapToView(comment: CommentDocument): CommentsViewDto {
+  static mapToView(
+    comment: CommentDocument,
+    myStatus: string | null,
+  ): CommentsViewDto {
     const dto = new CommentsViewDto();
 
     dto.id = comment._id.toString();
     dto.content = comment.content;
     dto.commentatorInfo = comment.commentatorInfo;
-    dto.likesInfo = comment.likesInfo;
+    dto.likesInfo = {
+      likesCount: comment.likesInfo.likesCount,
+      dislikesCount: comment.likesInfo.dislikesCount,
+      myStatus: myStatus ? myStatus : 'None',
+    };
     dto.createdAt = comment.createdAt;
 
     return dto;

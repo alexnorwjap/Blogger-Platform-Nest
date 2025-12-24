@@ -1,5 +1,5 @@
-type RegistrationConfirmationDto = {
+class RegistrationConfirmationDto {
   code: string;
-};
+}
 
-export type { RegistrationConfirmationDto };
+export { RegistrationConfirmationDto };
