@@ -25,7 +25,6 @@ export class UserController {
   ) {}
   @Get()
   async findAll(@Query() query: UserQueryParams) {
-    console.log(query);
     return await this.usersQueryRepository.findAll(query);
   }
 

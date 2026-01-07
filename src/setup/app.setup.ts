@@ -4,10 +4,15 @@ import { INestApplication } from '@nestjs/common';
 import { swaggerSetup } from './swagger.setup';
 import cookieParser from 'cookie-parser';
 
-export function appSetup(app: INestApplication) {
+export function appSetup(app: INestApplication, isSwaggerEnabled: boolean) {
   app.use(cookieParser());
   pipesSetup(app);
   // globalPrefixSetup(app);
 
-  swaggerSetup(app);
+  if (isSwaggerEnabled) {
+    console.log('Swagger is enabled');
+    swaggerSetup(app);
+  } else {
+    console.log('Swagger is disabled');
+  }
 }

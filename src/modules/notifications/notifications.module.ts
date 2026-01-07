@@ -1,22 +1,21 @@
 import { Module } from '@nestjs/common';
 import { MailerModule } from '@nestjs-modules/mailer';
-import { ConfigModule, ConfigService } from '@nestjs/config';
 import { EmailService } from './email.service';
+import { CoreConfig } from 'src/core/core.config';
 
 @Module({
   imports: [
     MailerModule.forRootAsync({
-      imports: [ConfigModule],
-      useFactory: (configService: ConfigService) => ({
+      useFactory: (coreConfig: CoreConfig) => ({
         transport: {
           service: 'gmail',
           auth: {
-            user: configService.get<string>('EMAIL_USER'),
-            pass: configService.get<string>('EMAIL_PASSWORD'),
+            user: coreConfig.emailUser,
+            pass: coreConfig.emailPassword,
           },
         },
       }),
-      inject: [ConfigService],
+      inject: [CoreConfig],
     }),
   ],
   providers: [EmailService],

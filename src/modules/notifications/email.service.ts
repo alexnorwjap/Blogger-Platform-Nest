@@ -1,13 +1,17 @@
 import { MailerService } from '@nestjs-modules/mailer';
 import { Injectable } from '@nestjs/common';
+import { CoreConfig } from 'src/core/core.config';
 
 @Injectable()
 export class EmailService {
-  constructor(private mailerService: MailerService) {}
+  constructor(
+    private mailerService: MailerService,
+    private coreConfig: CoreConfig,
+  ) {}
 
   async sendConfirmationEmail(email: string, code: string): Promise<void> {
     await this.mailerService.sendMail({
-      from: `INCUBATOR <${process.env.EMAIL_USER}>`,
+      from: `INCUBATOR <${this.coreConfig.emailUser}>`,
       to: email,
       subject: 'Confirm your email',
       html: ` <h1>Thank for your registration</h1>
@@ -23,7 +27,7 @@ export class EmailService {
     recoveryCode: string,
   ): Promise<void> {
     await this.mailerService.sendMail({
-      from: `INCUBATOR <${process.env.EMAIL_USER}>`,
+      from: `INCUBATOR <${this.coreConfig.emailUser}>`,
       to: email,
       subject: 'Password recovery',
       html: `<h1>Password recovery</h1>

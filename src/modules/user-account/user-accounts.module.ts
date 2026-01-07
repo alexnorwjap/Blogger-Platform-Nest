@@ -10,7 +10,7 @@ import { AuthController } from './api/auth.controller';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { CryptoService } from './application/crypto.service';
 import { AuthService } from './application/auth.service';
-import { JwtStrategy } from './guards/bearer/jst.strategy';
+import { JwtStrategy } from './guards/bearer/jwt.strategy';
 import { BasicStrategy } from './guards/basic/basic.strategy';
 import { LocalStrategy } from './guards/local/local.strategy';
 import { RegistrationUseCase } from './application/usecases/auth/registration.usecase';
@@ -25,14 +25,28 @@ import { DeleteUserForAdminUseCase } from './application/usecases/admin/delete-u
 import { GetUserByIdQueryHandler } from './application/queries/user/getUserById.query';
 import { ACCESS_TOKEN_STRATEGY_INJECT_TOKEN } from './constants/auth-tokens.inject-constants';
 import { REFRESH_TOKEN_STRATEGY_INJECT_TOKEN } from './constants/auth-tokens.inject-constants';
-import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
+import { CoreConfig } from 'src/core/core.config';
+import { Device, DeviceSchema } from './domain/device.entity';
+import { DeviceController } from './api/device.controller';
+import { DeviceRepository } from './infrastructure/device.repository';
+import { GetDeviceByIdQueryHandler } from './application/queries/device/get-device.unauthorized.query';
+import { CreateDeviceUseCase } from './application/usecases/device/create-device.usecase';
+import { DeleteDeviceUseCase } from './application/usecases/device/delete-device.usecase';
+import { DeleteOtherDevicesUseCase } from './application/usecases/device/delete-other-devices.usecase';
+import { UpdateDeviceUseCase } from './application/usecases/device/update-device.usecase';
+import { DeviceQueryRepository } from './infrastructure/query/device.query-repository';
+import { RefreshJwtStrategy } from './guards/cookie/refresh-jwt.strategy';
+import { RefreshTokenUseCase } from './application/usecases/auth/refresh-token.usecase';
+import { GetDeviceByIdNotFoundQueryHandler } from './application/queries/device/get-device.not-found.query';
+
 @Module({
   imports: [
     MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
+    MongooseModule.forFeature([{ name: Device.name, schema: DeviceSchema }]),
     NotificationsModule,
   ],
-  controllers: [UserController, AuthController],
+  controllers: [UserController, AuthController, DeviceController],
   providers: [
     // User
     UserService,
@@ -40,12 +54,17 @@ import { JwtService } from '@nestjs/jwt';
     UserQueryRepository,
     // Auth
     AuthService,
+    // Device
+    DeviceRepository,
+    DeviceQueryRepository,
+
     //Another
     CryptoService,
     // Strategy
     JwtStrategy,
     BasicStrategy,
     LocalStrategy,
+    RefreshJwtStrategy,
     // useCases
     RegistrationUseCase,
     CheckAndCreateUseCase,
@@ -56,28 +75,40 @@ import { JwtService } from '@nestjs/jwt';
     PasswordRecoveryUseCase,
     LoginUseCase,
     DeleteUserForAdminUseCase,
+    RefreshTokenUseCase,
 
+    CreateDeviceUseCase,
+    DeleteDeviceUseCase,
+    DeleteOtherDevicesUseCase,
+    UpdateDeviceUseCase,
+
+    // Queries
     GetUserByIdQueryHandler,
-
+    GetDeviceByIdQueryHandler,
+    GetDeviceByIdNotFoundQueryHandler,
     {
       provide: ACCESS_TOKEN_STRATEGY_INJECT_TOKEN,
-      useFactory: (configService: ConfigService): JwtService => {
+      useFactory: (coreConfig: CoreConfig): JwtService => {
         return new JwtService({
-          secret: configService.get<string>('JWT_SECRET_ACCESS'),
-          signOptions: { expiresIn: '5m' },
+          secret: coreConfig.accessTokenSecret,
+          signOptions: {
+            expiresIn: coreConfig.accessExpireIn as any,
+          },
         });
       },
-      inject: [ConfigService],
+      inject: [CoreConfig],
     },
     {
       provide: REFRESH_TOKEN_STRATEGY_INJECT_TOKEN,
-      useFactory: (configService: ConfigService): JwtService => {
+      useFactory: (coreConfig: CoreConfig): JwtService => {
         return new JwtService({
-          secret: configService.get<string>('JWT_SECRET_REFRESH'),
-          signOptions: { expiresIn: '20m' },
+          secret: coreConfig.refreshTokenSecret,
+          signOptions: {
+            expiresIn: coreConfig.refreshExpireIn as any,
+          },
         });
       },
-      inject: [ConfigService],
+      inject: [CoreConfig],
     },
   ],
   exports: [JwtStrategy, BasicStrategy, GetUserByIdQueryHandler],
