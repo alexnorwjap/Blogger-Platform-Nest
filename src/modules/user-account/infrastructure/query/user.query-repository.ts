@@ -30,7 +30,6 @@ export class UserQueryRepository {
   async findAll(
     query: UserQueryParams,
   ): Promise<PaginatedViewDto<UserViewDto[]>> {
-    console.log(query);
     const filter: UserFilter = {
       deletedAt: null,
     };
