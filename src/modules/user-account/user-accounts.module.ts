@@ -26,7 +26,7 @@ import { GetUserByIdQueryHandler } from './application/queries/user/getUserById.
 import { ACCESS_TOKEN_STRATEGY_INJECT_TOKEN } from './constants/auth-tokens.inject-constants';
 import { REFRESH_TOKEN_STRATEGY_INJECT_TOKEN } from './constants/auth-tokens.inject-constants';
 import { JwtService } from '@nestjs/jwt';
-import { CoreConfig } from 'src/core/core.config';
+import { CoreConfig } from 'src/core/config/core.config';
 import { Device, DeviceSchema } from './domain/device.entity';
 import { DeviceController } from './api/device.controller';
 import { DeviceRepository } from './infrastructure/device.repository';

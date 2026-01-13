@@ -12,7 +12,9 @@ import { AllHttpExceptionsFilter } from './core/exceptions/filters/all-exception
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { CoreModule } from './core/core.module';
-import { CoreConfig } from './core/core.config';
+import { CoreConfig } from './core/config/core.config';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { getTypeOrmConfig } from './core/config/typeorm.config';
 
 @Module({
   imports: [
@@ -25,6 +27,10 @@ import { CoreConfig } from './core/core.config';
           uri: coreConfig.mongoURI,
         };
       },
+      inject: [CoreConfig],
+    }),
+    TypeOrmModule.forRootAsync({
+      useFactory: getTypeOrmConfig,
       inject: [CoreConfig],
     }),
     NotificationsModule,

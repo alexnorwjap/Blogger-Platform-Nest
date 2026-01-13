@@ -1,7 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { appSetup } from './setup/app.setup';
-import { CoreConfig } from './core/core.config';
+import { CoreConfig } from './core/config/core.config';
 
 export const production = true;
 

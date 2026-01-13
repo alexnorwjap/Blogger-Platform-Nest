@@ -2,7 +2,7 @@ import { Strategy } from 'passport-jwt';
 import { PassportStrategy } from '@nestjs/passport';
 import { Injectable } from '@nestjs/common';
 import RefreshTokenContextDto from '../dto/refresh-token-context.dto';
-import { CoreConfig } from 'src/core/core.config';
+import { CoreConfig } from 'src/core/config/core.config';
 import { Request } from 'express';
 
 @Injectable()

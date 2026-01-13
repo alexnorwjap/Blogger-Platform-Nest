@@ -29,7 +29,7 @@ class CreateCommentUseCase implements ICommandHandler<CreateCommentCommand> {
     const user = await this.queryBus.execute(new GetUserByIdQuery(dto.userId));
     const newComment = this.commentModel.createInstance({
       ...dto,
-      userId: user._id.toString(),
+      userId: user.id,
       userLogin: user.login,
     });
     await this.commentsRepository.save(newComment);

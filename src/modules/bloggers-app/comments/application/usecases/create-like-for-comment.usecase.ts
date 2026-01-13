@@ -3,12 +3,12 @@ import { LikeForCommentsRepository } from '../../infrastructure/like-for-comment
 import type { LikeForCommentModelType } from '../../domain/like-for-comment.entity';
 import { LikeForComment } from '../../domain/like-for-comment.entity';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
-import { UserDocument } from 'src/modules/user-account/domain/user.entity';
 import { CommentDocument } from '../../domain/comments.entity';
 import { CommentsRepository } from '../../infrastructure/comments.repository';
+import { UserTypeORM } from 'src/modules/user-account/domain/user-typeorm.entity';
 
 class CreateLikeForCommentDto {
-  user: UserDocument;
+  user: UserTypeORM;
   comment: CommentDocument;
   likeStatus: string;
 }
@@ -28,7 +28,7 @@ class CreateLikeForCommentUseCase implements ICommandHandler<CreateLikeForCommen
 
   async execute({ dto }: CreateLikeForCommentCommand) {
     const likeForComment = this.likeForCommentModel.createInstance({
-      userId: dto.user._id.toString(),
+      userId: dto.user.id,
       login: dto.user.login,
       commentId: dto.comment._id.toString(),
       likeStatus: dto.likeStatus,

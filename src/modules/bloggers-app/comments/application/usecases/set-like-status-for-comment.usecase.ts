@@ -31,7 +31,7 @@ class SetLikeStatusForCommentUseCase implements ICommandHandler<SetLikeStatusFor
     const likeForComment =
       await this.likeForCommentsRepository.findLikeForComment(
         comment._id.toString(),
-        user._id.toString(),
+        user.id,
       );
 
     if (!likeForComment) {

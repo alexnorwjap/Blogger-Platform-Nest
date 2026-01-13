@@ -23,6 +23,6 @@ export class AuthService {
     });
     if (!isPasswordCorrect) return null;
 
-    return user._id.toString();
+    return user.id;
   }
 }

@@ -4,7 +4,6 @@ import {
   CommandHandler,
   ICommandHandler,
 } from '@nestjs/cqrs';
-import { UserDocument } from '../../../domain/user.entity';
 import { CreateUserDto } from '../../../dto/create-user.dto';
 
 import { CheckAndCreateCommand } from '../shared/check-create-user.usecase';
@@ -20,10 +19,10 @@ export class CreateUserForAdminUseCase implements ICommandHandler<CreateUserForA
   constructor(private commandBus: CommandBus) {}
 
   async execute({ dto }: CreateUserForAdminCommand) {
-    const newUser: UserDocument = await this.commandBus.execute(
+    const idNewUser = await this.commandBus.execute(
       new CheckAndCreateCommand(dto),
     );
 
-    return { userId: newUser._id.toString() };
+    return { userId: idNewUser };
   }
 }

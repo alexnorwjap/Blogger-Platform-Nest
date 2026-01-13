@@ -28,14 +28,14 @@ class SetLikeStatusForPostUseCase implements ICommandHandler<SetLikeStatusForPos
     const user = await this.queryBus.execute(new GetUserByIdQuery(dto.userId));
     const likeForPost = await this.likeForPostRepository.findLikeForPost(
       post._id.toString(),
-      user._id.toString(),
+      user.id,
     );
 
     if (!likeForPost) {
       return await this.commandBus.execute(
         new CreateLikeForPostCommand(
           {
-            userId: user._id.toString(),
+            userId: user.id,
             postId: post._id.toString(),
             likeStatus: dto.likeStatus,
             login: user.login,

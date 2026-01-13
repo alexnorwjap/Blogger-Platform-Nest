@@ -20,7 +20,7 @@ class RegistrationConfirmationUseCase implements ICommandHandler<RegistrationCon
     if (
       !user ||
       user.isEmailConfirmed ||
-      user.confirmation.expirationDate.getTime() < Date.now()
+      user.confirmationExpirationDate.getTime() < Date.now()
     ) {
       throw new DomainException({
         code: DomainExceptionCode.BadRequest,
@@ -28,9 +28,9 @@ class RegistrationConfirmationUseCase implements ICommandHandler<RegistrationCon
         extensions: [new Extension('Code not valid or expired', 'code')],
       });
     }
-
-    user.confirmUser();
-    await this.userRepository.save(user);
+    await this.userRepository.updateUser(user.id, {
+      isEmailConfirmed: true,
+    });
   }
 }
 

@@ -81,6 +81,8 @@ export class AuthController {
       sameSite: 'strict',
     });
 
+    console.log(result.refreshToken);
+
     return {
       accessToken: result.accessToken,
     };

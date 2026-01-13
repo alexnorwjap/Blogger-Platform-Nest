@@ -25,21 +25,22 @@ export class JwtRefreshAuthGuard extends AuthGuard('jwt-refresh') {
     await super.canActivate(context);
 
     const request = context.switchToHttp().getRequest();
+
     const user = request.user as RefreshTokenContextDto;
     if (!user) {
       throw new DomainException({
         code: DomainExceptionCode.Unauthorized,
       });
     }
-
     const device = await this.deviceRepository.getDeviceById(user.deviceId);
-    if (!device || device.deletedAt) {
+    if (!device) {
       throw new DomainException({
         code: DomainExceptionCode.Unauthorized,
       });
     }
     const tokenLastDate = new Date(user.lastActiveDate);
     const tokenFromDB = new Date(device.lastActiveDate);
+
     const isTokenExpired = isAfter(tokenFromDB, tokenLastDate);
     if (isTokenExpired) {
       throw new DomainException({

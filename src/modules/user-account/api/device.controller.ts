@@ -7,7 +7,7 @@ import {
   Param,
   UseGuards,
 } from '@nestjs/common';
-import { IdInputDTO } from 'src/core/dto/id-params.dto';
+import { IdInputUUIDDTO } from 'src/core/dto/id-params.dto';
 import { DeviceQueryRepository } from '../infrastructure/query/device.query-repository';
 import ExtractUserFromRequest from '../guards/decorators/extract-user-from-req.decorators';
 import { CommandBus } from '@nestjs/cqrs';
@@ -38,7 +38,7 @@ export class DeviceController {
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   delete(
-    @Param() { id }: IdInputDTO,
+    @Param() { id }: IdInputUUIDDTO,
     @ExtractUserFromRequest() user: RefreshTokenContextDto,
   ) {
     return this.commandBus.execute(new DeleteDeviceCommand(user, id));

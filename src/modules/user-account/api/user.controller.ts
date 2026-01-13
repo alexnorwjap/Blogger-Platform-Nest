@@ -11,12 +11,12 @@ import { UserQueryRepository } from '../infrastructure/query/user.query-reposito
 import { UserQueryParams } from './input-dto/user.query-params.dto';
 import { BasicAuthGuard } from '../guards/basic/basic-auth.guard';
 import { RegistrationDto } from './input-dto/registration.dto';
-import { IdInputDTO } from '../../../core/dto/id-params.dto';
+import { IdInputUUIDDTO } from '../../../core/dto/id-params.dto';
 import { CommandBus } from '@nestjs/cqrs';
 import { CreateUserForAdminCommand } from '../application/usecases/admin/create-user-for-admin.usecase';
 import { DeleteUserForAdminCommand } from '../application/usecases/admin/delete-user-for-admin.usecase';
 
-@Controller('users')
+@Controller('sa/users')
 @UseGuards(BasicAuthGuard)
 export class UserController {
   constructor(
@@ -33,12 +33,13 @@ export class UserController {
     const { userId } = await this.commandBus.execute(
       new CreateUserForAdminCommand(createUserDto),
     );
+
     return await this.usersQueryRepository.findOne(userId);
   }
 
   @Delete(':id')
   @HttpCode(204)
-  async delete(@Param() { id }: IdInputDTO) {
+  async delete(@Param() { id }: IdInputUUIDDTO) {
     return await this.commandBus.execute(new DeleteUserForAdminCommand(id));
   }
 }
