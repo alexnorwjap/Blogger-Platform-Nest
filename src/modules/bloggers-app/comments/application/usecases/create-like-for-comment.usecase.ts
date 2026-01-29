@@ -1,15 +1,10 @@
-import { InjectModel } from '@nestjs/mongoose';
 import { LikeForCommentsRepository } from '../../infrastructure/like-for-comments.repository';
-import type { LikeForCommentModelType } from '../../domain/like-for-comment.entity';
-import { LikeForComment } from '../../domain/like-for-comment.entity';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
-import { UserDocument } from 'src/modules/user-account/domain/user.entity';
-import { CommentDocument } from '../../domain/comments.entity';
-import { CommentsRepository } from '../../infrastructure/comments.repository';
+import { UserTypeORM } from 'src/modules/user-account/domain/user-typeorm.entity';
 
 class CreateLikeForCommentDto {
-  user: UserDocument;
-  comment: CommentDocument;
+  user: UserTypeORM;
+  commentId: string;
   likeStatus: string;
 }
 
@@ -19,23 +14,15 @@ class CreateLikeForCommentCommand {
 
 @CommandHandler(CreateLikeForCommentCommand)
 class CreateLikeForCommentUseCase implements ICommandHandler<CreateLikeForCommentCommand> {
-  constructor(
-    @InjectModel(LikeForComment.name)
-    private readonly likeForCommentModel: LikeForCommentModelType,
-    private readonly likeForCommentsRepository: LikeForCommentsRepository,
-    private readonly commentsRepository: CommentsRepository,
-  ) {}
+  constructor(private readonly likeForCommentsRepository: LikeForCommentsRepository) {}
 
   async execute({ dto }: CreateLikeForCommentCommand) {
-    const likeForComment = this.likeForCommentModel.createInstance({
-      userId: dto.user._id.toString(),
+    return await this.likeForCommentsRepository.create({
+      userId: dto.user.id,
       login: dto.user.login,
-      commentId: dto.comment._id.toString(),
+      commentId: dto.commentId,
       likeStatus: dto.likeStatus,
     });
-    await this.likeForCommentsRepository.save(likeForComment);
-    dto.comment.applyFirstReaction(dto.likeStatus);
-    await this.commentsRepository.save(dto.comment);
   }
 }
 

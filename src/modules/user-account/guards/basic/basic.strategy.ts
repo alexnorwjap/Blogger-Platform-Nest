@@ -3,7 +3,7 @@ import { DomainException } from 'src/core/exceptions/domain-exceptions';
 import { DomainExceptionCode } from 'src/core/exceptions/filters/domain-exceptions-code';
 import { PassportStrategy } from '@nestjs/passport';
 import { Injectable } from '@nestjs/common';
-import { CoreConfig } from 'src/core/core.config';
+import { CoreConfig } from 'src/core/config/core.config';
 
 @Injectable()
 export class BasicStrategy extends PassportStrategy(Strategy, 'basic') {

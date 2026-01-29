@@ -3,7 +3,6 @@ import { configModule } from './config-dynamic-module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { BloggersAppModule } from './modules/bloggers-app/bloggers-app.module';
-import { MongooseModule } from '@nestjs/mongoose';
 import { UserAccountsModule } from './modules/user-account/user-accounts.module';
 import { TestingModule } from './modules/testing/testing.module';
 import { DomainHttpExceptionsFilter } from './core/exceptions/filters/domain-exception.filter';
@@ -12,19 +11,17 @@ import { AllHttpExceptionsFilter } from './core/exceptions/filters/all-exception
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { CoreModule } from './core/core.module';
-import { CoreConfig } from './core/core.config';
+import { CoreConfig } from './core/config/core.config';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { getTypeOrmConfig } from './core/config/typeorm.config';
 
 @Module({
   imports: [
     configModule,
     BloggersAppModule,
     UserAccountsModule,
-    MongooseModule.forRootAsync({
-      useFactory: (coreConfig: CoreConfig) => {
-        return {
-          uri: coreConfig.mongoURI,
-        };
-      },
+    TypeOrmModule.forRootAsync({
+      useFactory: getTypeOrmConfig,
       inject: [CoreConfig],
     }),
     NotificationsModule,

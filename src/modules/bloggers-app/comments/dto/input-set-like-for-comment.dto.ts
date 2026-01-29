@@ -4,4 +4,11 @@ class InputSetLikeForCommentDto {
   likeStatus: string;
 }
 
-export { InputSetLikeForCommentDto };
+class CreateLikeForCommentDto {
+  userId: string;
+  login: string;
+  commentId: string;
+  likeStatus: string;
+}
+
+export { InputSetLikeForCommentDto, CreateLikeForCommentDto };

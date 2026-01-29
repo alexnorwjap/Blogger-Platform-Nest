@@ -1,31 +1,29 @@
-import type {
-  CommentDocument,
-  CommentatorInfo,
-  LikesInfo,
-} from '../../domain/comments.entity';
-
 export class CommentsViewDto {
   id: string;
   content: string;
-  commentatorInfo: CommentatorInfo;
-  likesInfo: LikesInfo;
+  commentatorInfo: {
+    userId: string;
+    userLogin: string;
+  };
+  likesInfo: {
+    likesCount: number;
+    dislikesCount: number;
+    myStatus: string;
+  };
   createdAt: Date;
 
-  static mapToView(
-    comment: CommentDocument,
-    myStatus: string | null,
-  ): CommentsViewDto {
+  static mapToView(comment: any[], myStatus: string | null): CommentsViewDto {
     const dto = new CommentsViewDto();
 
-    dto.id = comment._id.toString();
-    dto.content = comment.content;
-    dto.commentatorInfo = comment.commentatorInfo;
+    dto.id = comment[0].id;
+    dto.content = comment[0].content;
+    dto.commentatorInfo = comment[0].commentatorInfo;
     dto.likesInfo = {
-      likesCount: comment.likesInfo.likesCount,
-      dislikesCount: comment.likesInfo.dislikesCount,
+      likesCount: Number(comment[0].likesCount),
+      dislikesCount: Number(comment[0].dislikesCount),
       myStatus: myStatus ? myStatus : 'None',
     };
-    dto.createdAt = comment.createdAt;
+    dto.createdAt = comment[0].createdAt;
 
     return dto;
   }

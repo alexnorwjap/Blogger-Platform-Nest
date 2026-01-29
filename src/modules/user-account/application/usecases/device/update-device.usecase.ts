@@ -19,8 +19,9 @@ class UpdateDeviceUseCase implements ICommandHandler<UpdateDeviceCommand> {
     const device = await this.queryBus.execute(
       new GetDeviceByIdQuery(deviceId),
     );
-    device.updateDate();
-    await this.deviceRepository.save(device);
+    await this.deviceRepository.updateDevice(device.id, {
+      lastActiveDate: new Date(),
+    });
   }
 }
 

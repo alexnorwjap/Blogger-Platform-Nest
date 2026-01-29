@@ -1,71 +1,89 @@
-import { InjectModel } from '@nestjs/mongoose';
-import type { UserModelType } from '../../domain/user.entity';
-import { User } from '../../domain/user.entity';
 import { UserViewDto } from '../../api/view-dto/user.view-dto';
 import { UserQueryParams } from '../../api/input-dto/user.query-params.dto';
 import { PaginatedViewDto } from 'src/core/dto/base.paginated.view-dto';
 import { Injectable } from '@nestjs/common';
 import { MeViewDto } from '../../api/view-dto/me.view-dto';
-
-type UserFilter = {
-  deletedAt: Date | null;
-  $or?: {
-    login?: { $regex: string; $options: string };
-    email?: { $regex: string; $options: string };
-  }[];
-};
+import { DataSource } from 'typeorm';
+import { InjectDataSource } from '@nestjs/typeorm';
+import { UserTypeORM } from '../../domain/user-typeorm.entity';
 
 @Injectable()
 export class UserQueryRepository {
   constructor(
-    @InjectModel(User.name)
-    private readonly userModel: UserModelType,
+    @InjectDataSource()
+    private readonly dataSource: DataSource,
   ) {}
   async findOne(id: string): Promise<UserViewDto | null> {
-    const user = await this.userModel.findOne({ _id: id, deletedAt: null });
-    if (!user) return null;
-    return UserViewDto.mapToView(user);
+    const user: UserTypeORM[] = await this.dataSource.query(
+      `SELECT * FROM users WHERE id = $1 AND "deletedAt" IS NULL`,
+      [id],
+    );
+    if (user.length === 0) return null;
+    return UserViewDto.mapToView(user[0]);
   }
 
   async findAll(
     query: UserQueryParams,
   ): Promise<PaginatedViewDto<UserViewDto[]>> {
-    const filter: UserFilter = {
-      deletedAt: null,
-    };
+    const conditions: string[] = ['"deletedAt" IS NULL'];
+    const params: any[] = [];
+    let paramIndex = 1;
+
+    const searchConditions: string[] = [];
+
     if (query.searchLoginTerm) {
-      filter.$or = filter.$or || [];
-      filter.$or.push({
-        login: { $regex: query.searchLoginTerm, $options: 'i' },
-      });
+      searchConditions.push(`"login" ILIKE $${paramIndex}`);
+      paramIndex++;
+      params.push(`%${query.searchLoginTerm}%`);
     }
     if (query.searchEmailTerm) {
-      filter.$or = filter.$or || [];
-      filter.$or.push({
-        email: { $regex: query.searchEmailTerm, $options: 'i' },
-      });
+      searchConditions.push(`"email" ILIKE $${paramIndex}`);
+      paramIndex++;
+      params.push(`%${query.searchEmailTerm}%`);
     }
 
-    const usersResult = this.userModel
-      .find(filter)
-      .sort({ [query.sortBy]: query.sortDirection })
-      .skip(query.calculateSkip())
-      .limit(query.pageSize);
+    if (searchConditions.length > 0) {
+      conditions.push(`(${searchConditions.join(' OR ')})`);
+    }
 
-    const totalCount = this.userModel.countDocuments(filter);
+    // Разобраться что это за хрень, но сработала
+    const sortColumn =
+      query.sortBy === 'createdAt'
+        ? '"createdAt"'
+        : `"${query.sortBy}" COLLATE "C"`;
 
-    const [users, count] = await Promise.all([usersResult, totalCount]);
+    const usersQuery = `
+    SELECT * FROM users 
+    WHERE ${conditions.join(' AND ')}
+    ORDER BY ${sortColumn} ${query.sortDirection}
+    OFFSET ${query.calculateSkip()} LIMIT ${query.pageSize}
+  `;
+
+    const countQuery = `
+    SELECT COUNT(*) as count FROM users 
+    WHERE ${conditions.join(' AND ')}
+    `;
+
+    const [users, count] = await Promise.all([
+      this.dataSource.query(usersQuery, params),
+      this.dataSource.query(countQuery, params),
+    ]);
+
     return PaginatedViewDto.mapToView({
-      items: users.map((user) => UserViewDto.mapToView(user)),
+      items: users.map((user: UserTypeORM) => UserViewDto.mapToView(user)),
       page: query.pageNumber,
       size: query.pageSize,
-      totalCount: count,
+      totalCount: Number(count[0].count),
     });
   }
 
   async getMe(id: string): Promise<MeViewDto | null> {
-    const user = await this.userModel.findOne({ _id: id, deletedAt: null });
-    if (!user) return null;
-    return MeViewDto.mapToView(user);
+    const user: UserTypeORM[] = await this.dataSource.query(
+      `SELECT * FROM users WHERE id = $1 AND "deletedAt" IS NULL`,
+      [id],
+    );
+    if (user.length === 0) return null;
+
+    return MeViewDto.mapToView(user[0]);
   }
 }

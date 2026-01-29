@@ -1,7 +1,4 @@
 import { Module } from '@nestjs/common';
-import { User } from './domain/user.entity';
-import { MongooseModule } from '@nestjs/mongoose';
-import { UserSchema } from './domain/user.entity';
 import { UserService } from './application/user.service';
 import { UserController } from './api/user.controller';
 import { UserRepository } from './infrastructure/user.repository';
@@ -26,8 +23,7 @@ import { GetUserByIdQueryHandler } from './application/queries/user/getUserById.
 import { ACCESS_TOKEN_STRATEGY_INJECT_TOKEN } from './constants/auth-tokens.inject-constants';
 import { REFRESH_TOKEN_STRATEGY_INJECT_TOKEN } from './constants/auth-tokens.inject-constants';
 import { JwtService } from '@nestjs/jwt';
-import { CoreConfig } from 'src/core/core.config';
-import { Device, DeviceSchema } from './domain/device.entity';
+import { CoreConfig } from 'src/core/config/core.config';
 import { DeviceController } from './api/device.controller';
 import { DeviceRepository } from './infrastructure/device.repository';
 import { GetDeviceByIdQueryHandler } from './application/queries/device/get-device.unauthorized.query';
@@ -41,11 +37,7 @@ import { RefreshTokenUseCase } from './application/usecases/auth/refresh-token.u
 import { GetDeviceByIdNotFoundQueryHandler } from './application/queries/device/get-device.not-found.query';
 
 @Module({
-  imports: [
-    MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
-    MongooseModule.forFeature([{ name: Device.name, schema: DeviceSchema }]),
-    NotificationsModule,
-  ],
+  imports: [NotificationsModule],
   controllers: [UserController, AuthController, DeviceController],
   providers: [
     // User

@@ -28,7 +28,10 @@ class PasswordRecoveryUseCase implements ICommandHandler<PasswordRecoveryCommand
         extensions: [new Extension('Invalid recovery code', 'recoveryCode')],
       });
     }
-    if (user.recoveryCodeExpirationDate.getTime() < Date.now()) {
+    if (
+      user.recoveryCodeExpirationDate &&
+      user.recoveryCodeExpirationDate.getTime() < Date.now()
+    ) {
       throw new DomainException({
         code: DomainExceptionCode.BadRequest,
       });
@@ -37,9 +40,11 @@ class PasswordRecoveryUseCase implements ICommandHandler<PasswordRecoveryCommand
     const hashedPassword = await this.cryptoService.hashPassword(
       dto.newPassword,
     );
-    user.updatePassword(hashedPassword);
-
-    await this.userRepository.save(user);
+    await this.userRepository.updateUser(user.id, {
+      password: hashedPassword,
+      recoveryCode: null,
+      recoveryCodeExpirationDate: null,
+    });
   }
 }
 

@@ -1,4 +1,4 @@
-import { BlogDocument } from '../../domain/blog.entity';
+import { BlogTypeORM } from '../../domain/blog-typeorm.entity';
 
 export class BlogsViewDto {
   id: string;
@@ -8,10 +8,10 @@ export class BlogsViewDto {
   createdAt: Date;
   isMembership: boolean;
 
-  static mapToView(blog: BlogDocument): BlogsViewDto {
+  static mapToView(blog: BlogTypeORM): BlogsViewDto {
     const dto = new BlogsViewDto();
 
-    dto.id = blog._id.toString();
+    dto.id = blog.id;
     dto.name = blog.name;
     dto.description = blog.description;
     dto.websiteUrl = blog.websiteUrl;

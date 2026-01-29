@@ -1,7 +1,7 @@
-import { IsStringTrim } from 'src/core/decorators/validation/is-string-trim';
+import { IsUUID } from 'class-validator';
 
 class RegistrationConfirmationDto {
-  @IsStringTrim()
+  @IsUUID()
   code: string;
 }
 

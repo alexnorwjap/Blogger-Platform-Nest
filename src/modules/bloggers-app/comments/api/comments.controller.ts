@@ -10,7 +10,7 @@ import {
   Delete,
 } from '@nestjs/common';
 import { CommentsQueryRepository } from '../infrastructure/query/comments.query-repository';
-import { IdInputDTO } from 'src/core/dto/id-params.dto';
+import { IdInputUUIDDTO } from 'src/core/dto/id-params.dto';
 import { InputCommentDto } from './input-dto/comment.dto';
 import { CommandBus } from '@nestjs/cqrs';
 import ExtractUserFromRequest from 'src/modules/user-account/guards/decorators/extract-user-from-req.decorators';
@@ -34,7 +34,7 @@ export class CommentsController {
   @Public()
   @UseGuards(JwtOptionalAuthGuard)
   async findOne(
-    @Param() { id }: IdInputDTO,
+    @Param() { id }: IdInputUUIDDTO,
     @ExtractUserFromRequest() user: UserContextDto | null,
   ) {
     return await this.commentsQueryRepository.findOne(id, user);
@@ -43,7 +43,7 @@ export class CommentsController {
   @Put(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   async updateComment(
-    @Param() { id }: IdInputDTO,
+    @Param() { id }: IdInputUUIDDTO,
     @Body() dto: InputCommentDto,
     @ExtractUserFromRequest() user: UserContextDto,
   ) {
@@ -55,7 +55,7 @@ export class CommentsController {
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   async deleteComment(
-    @Param() { id }: IdInputDTO,
+    @Param() { id }: IdInputUUIDDTO,
     @ExtractUserFromRequest() user: UserContextDto,
   ) {
     return await this.commandBus.execute(
@@ -66,7 +66,7 @@ export class CommentsController {
   @Put(':id/like-status')
   @HttpCode(HttpStatus.NO_CONTENT)
   async setLikeStatusForComment(
-    @Param() { id }: IdInputDTO,
+    @Param() { id }: IdInputUUIDDTO,
     @Body() dto: UpdateLikeInputDto,
     @ExtractUserFromRequest() user: UserContextDto,
   ) {

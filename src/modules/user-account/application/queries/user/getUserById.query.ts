@@ -1,10 +1,10 @@
 import { IQueryHandler, QueryHandler, Query } from '@nestjs/cqrs';
 import { DomainException } from 'src/core/exceptions/domain-exceptions';
 import { DomainExceptionCode } from 'src/core/exceptions/filters/domain-exceptions-code';
-import { UserDocument } from 'src/modules/user-account/domain/user.entity';
+import { UserTypeORM } from 'src/modules/user-account/domain/user-typeorm.entity';
 import { UserRepository } from 'src/modules/user-account/infrastructure/user.repository';
 
-class GetUserByIdQuery extends Query<UserDocument> {
+class GetUserByIdQuery extends Query<UserTypeORM> {
   constructor(public readonly userId: string) {
     super();
   }

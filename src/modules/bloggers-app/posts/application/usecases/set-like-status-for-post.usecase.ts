@@ -1,15 +1,10 @@
 import { GetUserByIdQuery } from 'src/modules/user-account/application/queries/user/getUserById.query';
 import { LikeForPostContextDto } from '../../dto/like-for-post-context.dto';
 import { GetPostByIdQuery } from '../queries/getPostById.query';
-import {
-  CommandBus,
-  CommandHandler,
-  ICommandHandler,
-  QueryBus,
-} from '@nestjs/cqrs';
-import { LikeForPostRepository } from '../../infrastructure/like-for-post.repository';
+import { CommandBus, CommandHandler, ICommandHandler, QueryBus } from '@nestjs/cqrs';
 import { CreateLikeForPostCommand } from './create-like-for-post.usecase';
 import { UpdateLikeForPostCommand } from './update-like-for-post.usecase';
+import { GetLikeForPostQuery } from '../queries/getLikeForPost.query';
 
 class SetLikeStatusForPostCommand {
   constructor(public readonly dto: LikeForPostContextDto) {}
@@ -20,34 +15,25 @@ class SetLikeStatusForPostUseCase implements ICommandHandler<SetLikeStatusForPos
   constructor(
     private readonly queryBus: QueryBus,
     private readonly commandBus: CommandBus,
-    private readonly likeForPostRepository: LikeForPostRepository,
   ) {}
 
   async execute({ dto }: SetLikeStatusForPostCommand) {
     const post = await this.queryBus.execute(new GetPostByIdQuery(dto.postId));
     const user = await this.queryBus.execute(new GetUserByIdQuery(dto.userId));
-    const likeForPost = await this.likeForPostRepository.findLikeForPost(
-      post._id.toString(),
-      user._id.toString(),
-    );
-
+    const likeForPost = await this.queryBus.execute(new GetLikeForPostQuery(post.id, user.id));
     if (!likeForPost) {
       return await this.commandBus.execute(
-        new CreateLikeForPostCommand(
-          {
-            userId: user._id.toString(),
-            postId: post._id.toString(),
-            likeStatus: dto.likeStatus,
-            login: user.login,
-          },
-          post,
-        ),
+        new CreateLikeForPostCommand({
+          userId: user.id,
+          postId: post.id,
+          likeStatus: dto.likeStatus,
+          login: user.login,
+        }),
       );
     }
 
-    await this.commandBus.execute(
-      new UpdateLikeForPostCommand(likeForPost, post, dto.likeStatus),
-    );
+    if (likeForPost.likeStatus === dto.likeStatus) return;
+    await this.commandBus.execute(new UpdateLikeForPostCommand(likeForPost.id, dto.likeStatus));
   }
 }
 

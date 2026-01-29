@@ -1,6 +1,15 @@
-import { LikeForPostDocument } from '../../domain/like-for-post.entity';
-import { PostDocument } from '../../domain/post.entity';
-import type { ExtendedLikesInfo } from '../../domain/post.entity';
+class NewestLikes {
+  addedAt: Date;
+  userId: string;
+  login: string;
+}
+
+class ExtendedLikesInfo {
+  likesCount: number;
+  dislikesCount: number;
+  myStatus: string;
+  newestLikes: NewestLikes[];
+}
 
 export class PostsViewDto {
   id: string;
@@ -12,30 +21,21 @@ export class PostsViewDto {
   createdAt: Date;
   extendedLikesInfo: ExtendedLikesInfo;
 
-  static mapToView(
-    post: PostDocument,
-    newestLikes: LikeForPostDocument[],
-    myStatus: string | null,
-  ): PostsViewDto {
-    const dto = new PostsViewDto();
-
-    dto.id = post._id.toString();
-    dto.title = post.title;
-    dto.shortDescription = post.shortDescription;
-    dto.content = post.content;
-    dto.blogId = post.blogId;
-    dto.blogName = post.blogName;
-    dto.createdAt = post.createdAt;
-    dto.extendedLikesInfo = {
-      likesCount: post.extendedLikesInfo.likesCount,
-      dislikesCount: post.extendedLikesInfo.dislikesCount,
-      myStatus: myStatus ? myStatus : 'None',
-      newestLikes: newestLikes.map((like) => ({
-        addedAt: like.createdAt,
-        userId: like.userId,
-        login: like.login,
-      })),
+  static mapToView(post: any[], likeStatus: string | null): PostsViewDto {
+    const newPost = new PostsViewDto();
+    newPost.id = post[0].id;
+    newPost.title = post[0].title;
+    newPost.shortDescription = post[0].shortDescription;
+    newPost.content = post[0].content;
+    newPost.blogId = post[0].blogId;
+    newPost.blogName = post[0].blogName;
+    newPost.createdAt = post[0].createdAt;
+    newPost.extendedLikesInfo = {
+      likesCount: Number(post[0].likesCount),
+      dislikesCount: Number(post[0].dislikesCount),
+      myStatus: likeStatus || 'None',
+      newestLikes: post[0].newLikes,
     };
-    return dto;
+    return newPost;
   }
 }

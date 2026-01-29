@@ -14,9 +14,9 @@ class DeleteBlogUseCase implements ICommandHandler<DeleteBlogCommand> {
   ) {}
 
   async execute({ id }: DeleteBlogCommand) {
-    const blog = await this.queryBus.execute(new GetBlogByIdQuery(id));
-    blog.delete();
-    await this.blogsRepository.save(blog);
+    await this.queryBus.execute(new GetBlogByIdQuery(id));
+
+    await this.blogsRepository.updateBlog(id, { deletedAt: new Date() });
   }
 }
 export { DeleteBlogCommand, DeleteBlogUseCase };

@@ -1,16 +1,20 @@
-import type { DeviceModelType } from '../../domain/device.entity';
-import { InjectModel } from '@nestjs/mongoose';
-import { Device } from '../../domain/device.entity';
 import { DeviceViewDto } from '../../api/view-dto/device.view-dto';
+import { DeviceTypeORM } from '../../domain/device-typeorm.entity';
+import { InjectDataSource } from '@nestjs/typeorm';
+import { DataSource } from 'typeorm';
 
 export class DeviceQueryRepository {
   constructor(
-    @InjectModel(Device.name)
-    private readonly deviceModel: DeviceModelType,
+    @InjectDataSource()
+    private dataSource: DataSource,
   ) {}
 
   async findAll(userId: string): Promise<DeviceViewDto[]> {
-    const devices = await this.deviceModel.find({ userId, deletedAt: null });
+    const devices: DeviceTypeORM[] = await this.dataSource.query(
+      ` SELECT * FROM devices WHERE "userId" = $1 AND "deletedAt" IS NULL`,
+      [userId],
+    );
+
     return devices.map((device) => DeviceViewDto.mapToView(device));
   }
 }

@@ -14,9 +14,8 @@ class DeletePostUseCase implements ICommandHandler<DeletePostCommand> {
   ) {}
 
   async execute({ id }: DeletePostCommand) {
-    const post = await this.queryBus.execute(new GetPostByIdQuery(id));
-    post.delete();
-    await this.postsRepository.save(post);
+    await this.queryBus.execute(new GetPostByIdQuery(id));
+    await this.postsRepository.updatePost(id, { deletedAt: new Date() });
   }
 }
 

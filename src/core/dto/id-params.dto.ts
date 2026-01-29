@@ -1,6 +1,11 @@
-import { IsMongoId } from 'class-validator';
+import { IsUUID } from 'class-validator';
 
-export class IdInputDTO {
-  @IsMongoId()
+export class IdInputUUIDDTO {
+  @IsUUID()
   id: string;
+}
+
+export class PostIdInputUUIDDTO {
+  @IsUUID()
+  postId: string;
 }

@@ -1,4 +1,5 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
+import { randomUUID } from 'node:crypto';
 import {
   DomainException,
   Extension,
@@ -7,6 +8,7 @@ import { DomainExceptionCode } from 'src/core/exceptions/filters/domain-exceptio
 import { EmailService } from 'src/modules/notifications/email.service';
 import { EmailDto } from 'src/modules/user-account/dto/email.dto';
 import { UserRepository } from 'src/modules/user-account/infrastructure/user.repository';
+import { add } from 'date-fns';
 
 class EmailResendingCommand {
   constructor(public readonly dto: EmailDto) {}
@@ -28,11 +30,16 @@ class EmailResendingUseCase implements ICommandHandler<EmailResendingCommand> {
         extensions: [new Extension('Email confirmd or not found', 'email')],
       });
     }
-    user.resetConfirmationCode();
-    await this.userRepository.save(user);
+
+    const confirmationCode = randomUUID();
+
+    await this.userRepository.updateUser(user.id, {
+      confirmationCode: confirmationCode,
+      confirmationExpirationDate: add(new Date(), { minutes: 15 }),
+    });
 
     this.emailService
-      .sendConfirmationEmail(user.email, user.confirmation.confirmationCode)
+      .sendConfirmationEmail(user.email, confirmationCode)
       .catch(console.error);
   }
 }

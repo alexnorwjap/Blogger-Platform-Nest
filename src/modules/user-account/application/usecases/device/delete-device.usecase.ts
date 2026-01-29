@@ -30,8 +30,9 @@ class DeleteDeviceUseCase implements ICommandHandler<DeleteDeviceCommand> {
         code: DomainExceptionCode.Forbidden,
       });
     }
-    device.markAsDeleted();
-    await this.deviceRepository.save(device);
+    await this.deviceRepository.updateDevice(device.id, {
+      deletedAt: new Date(),
+    });
   }
 }
 

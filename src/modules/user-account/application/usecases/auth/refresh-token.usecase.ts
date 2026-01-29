@@ -26,17 +26,17 @@ class RefreshTokenUseCase implements ICommandHandler<RefreshTokenCommand> {
     const device = await this.queryBus.execute(
       new GetDeviceByIdQuery(dto.deviceId),
     );
-    device.updateDate();
-    await this.deviceRepository.save(device);
+    const newDevice = await this.deviceRepository.updateDevice(device.id, {
+      lastActiveDate: new Date(),
+    });
 
     const accessToken = this.accessTokenContext.sign({ id: dto.userId });
     const refreshToken = this.refreshTokenContext.sign({
       deviceId: dto.deviceId,
       userId: dto.userId,
-      lastActiveDate: device.lastActiveDate,
+      lastActiveDate: newDevice.lastActiveDate,
     });
 
-    console.log(accessToken, refreshToken);
     await Promise.resolve();
     return {
       accessToken,

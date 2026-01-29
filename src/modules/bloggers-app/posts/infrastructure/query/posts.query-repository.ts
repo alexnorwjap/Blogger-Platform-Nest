@@ -1,123 +1,170 @@
-import type { PostModelType } from '../../domain/post.entity';
-import { InjectModel } from '@nestjs/mongoose';
-import { Post } from '../../domain/post.entity';
 import { PostsViewDto } from '../../api/view-dto/posts.view-dto';
 import { PaginatedViewDto } from 'src/core/dto/base.paginated.view-dto';
 import { PostsQueryParams } from '../../api/input-dto/posts.query-params.dto';
 import { Injectable } from '@nestjs/common';
 import { DomainException } from 'src/core/exceptions/domain-exceptions';
 import { DomainExceptionCode } from 'src/core/exceptions/filters/domain-exceptions-code';
-import {
-  LikeForPost,
-  LikeForPostDocument,
-  type LikeForPostModelType,
-} from '../../domain/like-for-post.entity';
 import UserContextDto from 'src/modules/user-account/guards/dto/user.context.dto';
+import { DataSource } from 'typeorm';
+import { InjectDataSource } from '@nestjs/typeorm';
+import { LikeForPostRepository } from '../like-for-post.repository';
 
 @Injectable()
 export class PostsQueryRepository {
   constructor(
-    @InjectModel(Post.name)
-    private PostModel: PostModelType,
-    @InjectModel(LikeForPost.name)
-    private LikeForPostModel: LikeForPostModelType,
+    @InjectDataSource()
+    private dataSource: DataSource,
+    private readonly likeForPostRepository: LikeForPostRepository,
   ) {}
 
-  async findOne(
-    id: string,
-    user: UserContextDto | null,
-  ): Promise<PostsViewDto | null> {
-    const newestLikes = await this.LikeForPostModel.find({
-      postId: id,
-      likeStatus: 'Like',
-    })
-      .sort({ createdAt: -1 })
-      .limit(3);
+  async findOne(id: string, user: UserContextDto | null): Promise<PostsViewDto | null> {
+    const postQuery = `
+      SELECT
+        posts.*,
+        COUNT(CASE WHEN post_likes."likeStatus" = 'Like' THEN 1 END) as "likesCount",
+        COUNT(CASE WHEN post_likes."likeStatus" = 'Dislike' THEN 1 END) as "dislikesCount",
+        COALESCE(
+          (
+            SELECT json_agg(
+              json_build_object(
+                'userId', pl."userId",
+                'login', pl.login,
+                'addedAt', pl."createdAt"
+              ) ORDER BY pl."createdAt" DESC
+            )
+            FROM (
+              SELECT "userId", login, "createdAt"
+              FROM post_likes
+              WHERE post_likes."postId" = posts.id
+                AND post_likes."likeStatus" = 'Like'
+                AND post_likes."deletedAt" IS NULL
+              ORDER BY post_likes."createdAt" DESC
+              LIMIT 3
+            ) pl
+          ),
+          '[]'::json
+        ) as "newLikes"
+      FROM posts
+      LEFT JOIN post_likes ON post_likes."postId" = posts.id
+        AND post_likes."deletedAt" IS NULL
+      WHERE posts.id = $1 AND posts."deletedAt" IS NULL
+      GROUP BY posts.id
+    `;
 
-    const myStatus = user
-      ? await this.LikeForPostModel.findOne({
-          postId: id,
-          userId: user.id,
-        })
-      : null;
+    const [post, status] = await Promise.all([
+      this.dataSource.query(postQuery, [id]),
+      user ? this.likeForPostRepository.findLikeForPost(id, user.id) : Promise.resolve(null),
+    ]);
 
-    const post = await this.PostModel.findOne({ _id: id, deletedAt: null });
-    if (!post)
+    if (post.length === 0) {
       throw new DomainException({
         code: DomainExceptionCode.NotFound,
       });
+    }
 
-    return PostsViewDto.mapToView(
-      post,
-      newestLikes,
-      myStatus ? myStatus.likeStatus : null,
-    );
+    return PostsViewDto.mapToView(post, status ? status.likeStatus : null);
   }
+
   async findAll(
     blogId: string | null,
     query: PostsQueryParams,
     user: UserContextDto | null,
   ): Promise<PaginatedViewDto<PostsViewDto[]>> {
-    const filter = {
-      deletedAt: null,
-    };
+    const conditions: string[] = ['posts."deletedAt" IS NULL'];
+    const params: any[] = [];
+    let paramIndex = 1;
 
     if (blogId !== null) {
-      filter['blogId'] = blogId;
+      conditions.push(`posts."blogId" = $${paramIndex}`);
+      paramIndex++;
+      params.push(blogId);
     }
-    const postsResult = this.PostModel.find(filter)
-      .sort({ [query.sortBy]: query.sortDirection })
-      .skip(query.calculateSkip())
-      .limit(query.pageSize);
 
-    const totalCount = this.PostModel.countDocuments(filter);
+    const sortColumn =
+      query.sortBy === 'createdAt' ? 'posts."createdAt"' : `posts."${query.sortBy}" COLLATE "C"`;
 
-    const [posts, count] = await Promise.all([postsResult, totalCount]);
+    const postsQuery = `
+        SELECT
+          posts.*,
+          COUNT(CASE WHEN post_likes."likeStatus" = 'Like' THEN 1 END) as "likesCount",
+          COUNT(CASE WHEN post_likes."likeStatus" = 'Dislike' THEN 1 END) as "dislikesCount",
+          COALESCE(
+            (
+              SELECT json_agg(
+                json_build_object(
+                  'userId', pl."userId",
+                  'login', pl.login,
+                  'addedAt', pl."createdAt"
+                ) ORDER BY pl."createdAt" DESC
+              )
+              FROM (
+                SELECT "userId", login, "createdAt"
+                FROM post_likes
+                WHERE post_likes."postId" = posts.id
+                  AND post_likes."likeStatus" = 'Like'
+                  AND post_likes."deletedAt" IS NULL
+                ORDER BY post_likes."createdAt" DESC
+                LIMIT 3
+              ) pl
+            ),
+            '[]'::json
+          ) as "newLikes"
+        FROM posts
+        LEFT JOIN post_likes ON post_likes."postId" = posts.id 
+          AND post_likes."deletedAt" IS NULL
+        WHERE ${conditions.join(' AND ')}
+        GROUP BY posts.id
+        ORDER BY ${sortColumn} ${query.sortDirection}
+        OFFSET ${query.calculateSkip()} LIMIT ${query.pageSize}
+      `;
 
-    const postsIds = posts.map((post) => post._id.toString());
+    const countQuery = `
+      SELECT COUNT(*) as count
+      FROM posts
+      WHERE ${conditions.join(' AND ')}
+    `;
 
-    const [allNewestLikes, myStatuses] = await Promise.all([
-      this.LikeForPostModel.find({
-        postId: { $in: postsIds },
-        likeStatus: 'Like',
-      }).sort({ createdAt: -1 }),
-      user
-        ? this.LikeForPostModel.find({
-            postId: { $in: postsIds },
-            userId: user.id,
-          })
+    const likeStatusesQuery = user
+      ? `
+        SELECT "postId", "likeStatus"
+        FROM post_likes
+        WHERE "userId" = $${paramIndex}
+          AND "postId" IN (
+            SELECT id
+            FROM posts
+            WHERE ${conditions.join(' AND ')}
+            ORDER BY ${sortColumn} ${query.sortDirection}
+            OFFSET ${query.calculateSkip()} LIMIT ${query.pageSize}
+          )
+          AND "deletedAt" IS NULL
+      `
+      : null;
+
+    const [posts, count, likeStatuses] = await Promise.all([
+      this.dataSource.query(postsQuery, params),
+      this.dataSource.query(countQuery, params),
+      user && likeStatusesQuery
+        ? this.dataSource.query(likeStatusesQuery, [...params, user.id])
         : Promise.resolve([]),
     ]);
 
-    const newestLikesMap = new Map<string, LikeForPostDocument[]>();
-    for (const like of allNewestLikes) {
-      const postId = like.postId;
-      if (!newestLikesMap.has(postId)) {
-        newestLikesMap.set(postId, []);
+    const likeStatusesMap = new Map<string, string>();
+    if (user && likeStatuses) {
+      for (const status of likeStatuses) {
+        likeStatusesMap.set(status.postId, status.likeStatus);
       }
-      const likes = newestLikesMap.get(postId)!;
-      if (likes.length < 3) {
-        likes.push(like);
-      }
-    }
-    const myStatusesMap = new Map<string, string>();
-    for (const like of myStatuses) {
-      const postId = like.postId;
-      myStatusesMap.set(postId, like.likeStatus);
     }
 
+    const items = posts.map((post: any) => {
+      const likeStatus = likeStatusesMap.get(post.id) || null;
+      return PostsViewDto.mapToView([post], likeStatus);
+    });
+
     return PaginatedViewDto.mapToView({
-      items: posts.map((post) => {
-        const postId = post._id.toString();
-        return PostsViewDto.mapToView(
-          post,
-          newestLikesMap.get(postId) || [],
-          myStatusesMap.get(postId) || null,
-        );
-      }),
+      items,
       page: query.pageNumber,
       size: query.pageSize,
-      totalCount: count,
+      totalCount: Number(count[0].count),
     });
   }
 }

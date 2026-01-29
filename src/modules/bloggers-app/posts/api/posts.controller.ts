@@ -5,7 +5,7 @@ import {
   Body,
   Param,
   Get,
-  Delete,
+  // Delete,
   HttpCode,
   Query,
   UseGuards,
@@ -15,22 +15,23 @@ import { PostsQueryRepository } from '../infrastructure/query/posts.query-reposi
 import { PostsQueryParams } from './input-dto/posts.query-params.dto';
 import { CommentsQueryParams } from '../../comments/api/input-dto/comments.query-params.dto';
 import { CommentsQueryRepository } from '../../comments/infrastructure/query/comments.query-repository';
-import { IdInputDTO } from 'src/core/dto/id-params.dto';
-import { CreatePostCommand } from '../application/usecases/create-post.usecase';
+import { IdInputUUIDDTO } from 'src/core/dto/id-params.dto';
+// import { CreatePostCommand } from '../application/usecases/create-post.usecase';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
-import { InputPostReqBodyDto } from './input-dto/input.req-body.dto';
-import { UpdatePostCommand } from '../application/usecases/update-post.usecase';
-import { DeletePostCommand } from '../application/usecases/delete-post.usecase';
+// import { InputPostReqBodyDto } from './input-dto/input.req-body.dto';
+// import { UpdatePostCommand } from '../application/usecases/update-post.usecase';
+// import { DeletePostCommand } from '../application/usecases/delete-post.usecase';
 import { JwtAuthGuard } from 'src/modules/user-account/guards/bearer/jwt-auth.guard';
 import ExtractUserFromRequest from 'src/modules/user-account/guards/decorators/extract-user-from-req.decorators';
 import UserContextDto from 'src/modules/user-account/guards/dto/user.context.dto';
 import { InputCommentDto } from '../../comments/api/input-dto/comment.dto';
 import { CreateCommentCommand } from '../../comments/application/usecases/create-comment.usecase';
-import { BasicAuthGuard } from 'src/modules/user-account/guards/basic/basic-auth.guard';
+// import { BasicAuthGuard } from 'src/modules/user-account/guards/basic/basic-auth.guard';
 import { UpdateLikeInputDto } from '../../../../core/dto/update-like-input.dto';
 import { SetLikeStatusForPostCommand } from '../application/usecases/set-like-status-for-post.usecase';
 import { JwtOptionalAuthGuard } from 'src/modules/user-account/guards/bearer/jwt-optional-auth-guard';
 import { GetPostByIdQuery } from '../application/queries/getPostById.query';
+
 @Controller('posts')
 export class PostsController {
   constructor(
@@ -47,43 +48,41 @@ export class PostsController {
   ) {
     return await this.postsQueryRepository.findAll(null, query, user);
   }
-  @Post()
-  @UseGuards(BasicAuthGuard)
-  async create(@Body() dto: InputPostReqBodyDto) {
-    const { postId } = await this.commandBus.execute(
-      new CreatePostCommand(dto),
-    );
-    return await this.postsQueryRepository.findOne(postId, null);
-  }
+  // @Post()
+  // @UseGuards(BasicAuthGuard)
+  // async create(@Body() dto: InputPostReqBodyDto) {
+  //   const { postId } = await this.commandBus.execute(new CreatePostCommand(dto));
+  //   return await this.postsQueryRepository.findOne(postId, null);
+  // }
 
   @Get(':id')
   @UseGuards(JwtOptionalAuthGuard)
   async getOne(
-    @Param() { id }: IdInputDTO,
+    @Param() { id }: IdInputUUIDDTO,
     @ExtractUserFromRequest() user: UserContextDto | null,
   ) {
     return await this.postsQueryRepository.findOne(id, user);
   }
 
-  @Put(':id')
-  @UseGuards(BasicAuthGuard)
-  @HttpCode(204)
-  async update(@Param() { id }: IdInputDTO, @Body() dto: InputPostReqBodyDto) {
-    return await this.commandBus.execute(new UpdatePostCommand(id, dto));
-  }
+  // @Put(':id')
+  // @UseGuards(BasicAuthGuard)
+  // @HttpCode(204)
+  // async update(@Param() { id }: IdInputUUIDDTO, @Body() dto: InputPostReqBodyDto) {
+  //   return await this.commandBus.execute(new UpdatePostCommand(id, dto));
+  // }
 
-  @Delete(':id')
-  @UseGuards(BasicAuthGuard)
-  @HttpCode(204)
-  async delete(@Param() { id }: IdInputDTO) {
-    return await this.commandBus.execute(new DeletePostCommand(id));
-  }
+  // @Delete(':id')
+  // @UseGuards(BasicAuthGuard)
+  // @HttpCode(204)
+  // async delete(@Param() { id }: IdInputUUIDDTO) {
+  //   return await this.commandBus.execute(new DeletePostCommand(id));
+  // }
 
   @Put(':id/like-status')
   @HttpCode(HttpStatus.NO_CONTENT)
   @UseGuards(JwtAuthGuard)
   async updateLikeStatus(
-    @Param() { id }: IdInputDTO,
+    @Param() { id }: IdInputUUIDDTO,
     @Body() dto: UpdateLikeInputDto,
     @ExtractUserFromRequest() user: UserContextDto,
   ) {
@@ -101,7 +100,7 @@ export class PostsController {
   @UseGuards(JwtOptionalAuthGuard)
   async getComments(
     @Query() query: CommentsQueryParams,
-    @Param() { id }: IdInputDTO,
+    @Param() { id }: IdInputUUIDDTO,
     @ExtractUserFromRequest() user: UserContextDto | null,
   ) {
     await this.queryBus.execute(new GetPostByIdQuery(id));
@@ -111,7 +110,7 @@ export class PostsController {
   @Post(':id/comments')
   @UseGuards(JwtAuthGuard)
   async createComment(
-    @Param() { id }: IdInputDTO,
+    @Param() { id }: IdInputUUIDDTO,
     @Body() dto: InputCommentDto,
     @ExtractUserFromRequest() user: UserContextDto,
   ) {

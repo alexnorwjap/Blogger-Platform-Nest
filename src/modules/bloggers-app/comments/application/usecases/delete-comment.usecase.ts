@@ -17,16 +17,13 @@ class DeleteCommentUseCase implements ICommandHandler<DeleteCommentCommand> {
   ) {}
 
   async execute({ dto }: DeleteCommentCommand) {
-    const comment = await this.queryBus.execute(
-      new GetCommentByIdQuery(dto.commentId),
-    );
+    const comment = await this.queryBus.execute(new GetCommentByIdQuery(dto.commentId));
     if (comment.commentatorInfo.userId !== dto.userId) {
       throw new DomainException({
         code: DomainExceptionCode.Forbidden,
       });
     }
-    comment.delete();
-    await this.commentsRepository.save(comment);
+    await this.commentsRepository.updateComment(dto.commentId, { deletedAt: new Date() });
   }
 }
 

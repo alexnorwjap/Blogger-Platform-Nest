@@ -1,10 +1,10 @@
 import { IQueryHandler, Query, QueryHandler } from '@nestjs/cqrs';
-import { DeviceDocument } from 'src/modules/user-account/domain/device.entity';
 import { DeviceRepository } from 'src/modules/user-account/infrastructure/device.repository';
 import { DomainException } from 'src/core/exceptions/domain-exceptions';
 import { DomainExceptionCode } from 'src/core/exceptions/filters/domain-exceptions-code';
+import { DeviceTypeORM } from 'src/modules/user-account/domain/device-typeorm.entity';
 
-class GetDeviceByIdQuery extends Query<DeviceDocument> {
+class GetDeviceByIdQuery extends Query<DeviceTypeORM> {
   constructor(public readonly deviceId: string) {
     super();
   }
