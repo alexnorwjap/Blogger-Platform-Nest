@@ -1,10 +1,7 @@
 import { Command, CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { CreateUserDto } from '../../../dto/create-user.dto';
 import { UserRepository } from '../../../infrastructure/user.repository';
-import {
-  DomainException,
-  Extension,
-} from 'src/core/exceptions/domain-exceptions';
+import { DomainException, Extension } from 'src/core/exceptions/domain-exceptions';
 import { DomainExceptionCode } from 'src/core/exceptions/filters/domain-exceptions-code';
 import { CryptoService } from '../../crypto.service';
 
@@ -23,17 +20,11 @@ export class CheckAndCreateUseCase implements ICommandHandler<CheckAndCreateComm
 
   async execute({ dto }: CheckAndCreateCommand) {
     // TODO: Вынести в отдельный bus?
-    const user = await this.userRepository.getUserByLoginOrEmail(
-      dto.login,
-      dto.email,
-    );
+    const user = await this.userRepository.getUserByLoginOrEmail(dto.login, dto.email);
 
     if (user) {
       const coincidence = user.login === dto.login ? 'login' : 'email';
-      const extension = new Extension(
-        `This ${coincidence} not valid`,
-        coincidence,
-      );
+      const extension = new Extension(`This ${coincidence} not valid`, coincidence);
       throw new DomainException({
         code: DomainExceptionCode.BadRequest,
         message: 'errorsMessages',

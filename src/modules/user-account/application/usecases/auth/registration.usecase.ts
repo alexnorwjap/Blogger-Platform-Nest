@@ -1,9 +1,4 @@
-import {
-  CommandBus,
-  CommandHandler,
-  ICommandHandler,
-  QueryBus,
-} from '@nestjs/cqrs';
+import { CommandBus, CommandHandler, ICommandHandler, QueryBus } from '@nestjs/cqrs';
 import { CreateUserDto } from '../../../dto/create-user.dto';
 
 import { EmailService } from 'src/modules/notifications/email.service';
@@ -24,12 +19,8 @@ class RegistrationUseCase implements ICommandHandler<RegistrationCommand> {
   ) {}
 
   async execute({ dto }: RegistrationCommand) {
-    const userId = await this.commandBus.execute(
-      new CheckAndCreateCommand(dto),
-    );
-    const newUser: UserTypeORM = await this.queryBus.execute(
-      new GetUserByIdQuery(userId),
-    );
+    const userId = await this.commandBus.execute(new CheckAndCreateCommand(dto));
+    const newUser: UserTypeORM = await this.queryBus.execute(new GetUserByIdQuery(userId));
 
     this.emailService
       .sendConfirmationEmail(newUser.email, newUser.confirmationCode)

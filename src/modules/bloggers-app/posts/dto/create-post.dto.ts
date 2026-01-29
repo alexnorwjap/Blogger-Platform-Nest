@@ -3,6 +3,14 @@ class CreatePostDto {
   shortDescription: string;
   content: string;
   blogId: string;
+  blogName: string;
+}
+
+class CreatePostInputDto {
+  title: string;
+  shortDescription: string;
+  content: string;
+  blogId: string;
 }
 
 class CreatePostForBlogDto {
@@ -11,4 +19,4 @@ class CreatePostForBlogDto {
   content: string;
 }
 
-export type { CreatePostDto, CreatePostForBlogDto };
+export type { CreatePostDto, CreatePostForBlogDto, CreatePostInputDto };

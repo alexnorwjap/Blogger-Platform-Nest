@@ -17,16 +17,13 @@ class UpdateCommentUseCase implements ICommandHandler<UpdateCommentCommand> {
   ) {}
 
   async execute({ dto }: UpdateCommentCommand) {
-    const comment = await this.queryBus.execute(
-      new GetCommentByIdQuery(dto.commentId),
-    );
+    const comment = await this.queryBus.execute(new GetCommentByIdQuery(dto.commentId));
     if (comment.commentatorInfo.userId !== dto.userId) {
       throw new DomainException({
         code: DomainExceptionCode.Forbidden,
       });
     }
-    comment.update(dto.content);
-    await this.commentsRepository.save(comment);
+    await this.commentsRepository.updateComment(dto.commentId, { content: dto.content });
   }
 }
 

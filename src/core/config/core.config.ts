@@ -16,9 +16,6 @@ export class CoreConfig {
   port: number;
 
   @IsNotEmpty()
-  mongoURI: string;
-
-  @IsNotEmpty()
   @IsEnum(Environments)
   env: string;
 
@@ -66,27 +63,17 @@ export class CoreConfig {
 
   constructor(private configService: ConfigService) {
     this.port = Number(this.configService.getOrThrow('PORT'));
-    this.mongoURI = this.configService.getOrThrow('MONGO_URL');
     this.env = this.configService.getOrThrow('NODE_ENV');
     this.accessTokenSecret = this.configService.getOrThrow('JWT_SECRET_ACCESS');
-    this.refreshTokenSecret =
-      this.configService.getOrThrow('JWT_SECRET_REFRESH');
+    this.refreshTokenSecret = this.configService.getOrThrow('JWT_SECRET_REFRESH');
     this.emailPassword = this.configService.getOrThrow('EMAIL_PASSWORD');
     this.emailUser = this.configService.getOrThrow('EMAIL_USER');
     this.adminName = this.configService.getOrThrow('ADMIN_USERNAME');
     this.adminPassword = this.configService.getOrThrow('ADMIN_PASSWORD');
-    this.accessExpireIn = this.configService.getOrThrow(
-      'ACCESS_TOKEN_EXPIRE_IN',
-    );
-    this.refreshExpireIn = this.configService.getOrThrow(
-      'REFRESH_TOKEN_EXPIRE_IN',
-    );
-    this.isSwaggerEnabled = Boolean(
-      this.configService.getOrThrow('IS_SWAGGER'),
-    );
-    this.isTestingEnabled = Boolean(
-      this.configService.getOrThrow('IS_TESTING'),
-    );
+    this.accessExpireIn = this.configService.getOrThrow('ACCESS_TOKEN_EXPIRE_IN');
+    this.refreshExpireIn = this.configService.getOrThrow('REFRESH_TOKEN_EXPIRE_IN');
+    this.isSwaggerEnabled = Boolean(this.configService.getOrThrow('IS_SWAGGER'));
+    this.isTestingEnabled = Boolean(this.configService.getOrThrow('IS_TESTING'));
 
     this.postgresHost = this.configService.getOrThrow('POSTGRES_HOST');
     this.postgresPort = Number(this.configService.getOrThrow('POSTGRES_PORT'));

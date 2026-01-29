@@ -18,9 +18,8 @@ class UpdateBlogUseCase implements ICommandHandler<UpdateBlogCommand> {
   ) {}
 
   async execute({ id, dto }: UpdateBlogCommand) {
-    const blog = await this.queryBus.execute(new GetBlogByIdQuery(id));
-    blog.updateBlog(dto);
-    await this.blogsRepository.save(blog);
+    await this.queryBus.execute(new GetBlogByIdQuery(id));
+    await this.blogsRepository.updateBlog(id, dto);
   }
 }
 

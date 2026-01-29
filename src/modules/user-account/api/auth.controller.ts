@@ -111,9 +111,7 @@ export class AuthController {
   @HttpCode(HttpStatus.NO_CONTENT)
   @UseGuards(JwtRefreshAuthGuard)
   logout(@ExtractUserFromRequest() user: RefreshTokenContextDto) {
-    return this.commandBus.execute(
-      new DeleteDeviceCommand(user, user.deviceId),
-    );
+    return this.commandBus.execute(new DeleteDeviceCommand(user, user.deviceId));
   }
 
   @Post('refresh-token')

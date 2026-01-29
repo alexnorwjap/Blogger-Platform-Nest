@@ -2,6 +2,7 @@ import { CommandHandler, ICommandHandler, QueryBus } from '@nestjs/cqrs';
 import { UpdatePostDto } from '../../dto/update-post.dto';
 import { PostsRepository } from '../../infrastructure/posts.repository';
 import { GetPostByIdQuery } from '../queries/getPostById.query';
+import { GetBlogByIdQuery } from 'src/modules/bloggers-app/blogs/application/queries/get-blog.query';
 
 class UpdatePostCommand {
   constructor(
@@ -18,9 +19,9 @@ class UpdatePostUseCase implements ICommandHandler<UpdatePostCommand> {
   ) {}
 
   async execute({ id, dto }: UpdatePostCommand) {
-    const post = await this.queryBus.execute(new GetPostByIdQuery(id));
-    post.update(dto);
-    await this.postsRepository.save(post);
+    await this.queryBus.execute(new GetPostByIdQuery(id));
+    await this.queryBus.execute(new GetBlogByIdQuery(dto.blogId));
+    await this.postsRepository.updatePost(id, dto);
   }
 }
 

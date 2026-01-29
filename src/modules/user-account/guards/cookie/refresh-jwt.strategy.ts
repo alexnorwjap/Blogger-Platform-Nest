@@ -6,10 +6,7 @@ import { CoreConfig } from 'src/core/config/core.config';
 import { Request } from 'express';
 
 @Injectable()
-export class RefreshJwtStrategy extends PassportStrategy(
-  Strategy,
-  'jwt-refresh',
-) {
+export class RefreshJwtStrategy extends PassportStrategy(Strategy, 'jwt-refresh') {
   constructor(private coreConfig: CoreConfig) {
     super({
       jwtFromRequest: (req: Request) => req.cookies.refreshToken,

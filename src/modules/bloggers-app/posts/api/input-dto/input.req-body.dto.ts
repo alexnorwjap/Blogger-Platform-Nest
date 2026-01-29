@@ -1,4 +1,6 @@
 import { IsStringLengthTrim } from 'src/core/decorators/validation/is-string-length-trim';
+import { IsUUID } from 'class-validator';
+import { IsNotEmpty } from 'class-validator';
 
 const minLengthTitle = 0;
 const maxLengthTitle = 30;
@@ -14,6 +16,8 @@ class InputPostReqBodyDto {
   shortDescription: string;
   @IsStringLengthTrim(minLengthContent, maxLengthContent)
   content: string;
+  @IsUUID()
+  @IsNotEmpty()
   blogId: string;
 }
 

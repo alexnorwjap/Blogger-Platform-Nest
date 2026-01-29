@@ -1,10 +1,10 @@
 import { IQueryHandler, QueryHandler, Query } from '@nestjs/cqrs';
-import { BlogDocument } from '../../domain/blog.entity';
+import { BlogTypeORM } from '../../domain/blog-typeorm.entity';
 import { BlogsRepository } from '../../infrastructure/blogs.repository';
 import { DomainException } from 'src/core/exceptions/domain-exceptions';
 import { DomainExceptionCode } from 'src/core/exceptions/filters/domain-exceptions-code';
 
-class GetBlogByIdQuery extends Query<BlogDocument> {
+class GetBlogByIdQuery extends Query<BlogTypeORM> {
   constructor(public readonly blogId: string) {
     super();
   }

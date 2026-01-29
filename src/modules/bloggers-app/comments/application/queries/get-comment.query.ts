@@ -21,10 +21,10 @@
 import { IQueryHandler, Query, QueryHandler } from '@nestjs/cqrs';
 import { DomainException } from 'src/core/exceptions/domain-exceptions';
 import { DomainExceptionCode } from 'src/core/exceptions/filters/domain-exceptions-code';
-import { CommentDocument } from '../../domain/comments.entity';
 import { CommentsRepository } from '../../infrastructure/comments.repository';
+import { CommentTypeORM } from '../../domain/comment-typeorm.entity';
 
-class GetCommentByIdQuery extends Query<CommentDocument> {
+class GetCommentByIdQuery extends Query<CommentTypeORM> {
   constructor(public readonly commentId: string) {
     super();
   }

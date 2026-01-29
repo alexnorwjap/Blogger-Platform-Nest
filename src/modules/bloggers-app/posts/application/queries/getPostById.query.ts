@@ -1,10 +1,10 @@
 import { IQueryHandler, Query, QueryHandler } from '@nestjs/cqrs';
 import { DomainException } from 'src/core/exceptions/domain-exceptions';
 import { DomainExceptionCode } from 'src/core/exceptions/filters/domain-exceptions-code';
-import { PostDocument } from '../../domain/post.entity';
 import { PostsRepository } from '../../infrastructure/posts.repository';
+import { PostTypeORM } from '../../domain/post-typeorm.entity';
 
-class GetPostByIdQuery extends Query<PostDocument> {
+class GetPostByIdQuery extends Query<PostTypeORM> {
   constructor(public readonly postId: string) {
     super();
   }

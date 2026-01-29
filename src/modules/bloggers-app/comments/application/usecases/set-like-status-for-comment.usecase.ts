@@ -1,9 +1,4 @@
-import {
-  CommandBus,
-  CommandHandler,
-  ICommandHandler,
-  QueryBus,
-} from '@nestjs/cqrs';
+import { CommandBus, CommandHandler, ICommandHandler, QueryBus } from '@nestjs/cqrs';
 import { InputSetLikeForCommentDto } from '../../dto/input-set-like-for-comment.dto';
 import { GetCommentByIdQuery } from '../queries/get-comment.query';
 import { GetUserByIdQuery } from 'src/modules/user-account/application/queries/user/getUserById.query';
@@ -24,29 +19,26 @@ class SetLikeStatusForCommentUseCase implements ICommandHandler<SetLikeStatusFor
   ) {}
 
   async execute({ dto }: SetLikeStatusForCommentCommand) {
-    const comment = await this.queryBus.execute(
-      new GetCommentByIdQuery(dto.commentId),
-    );
+    const comment = await this.queryBus.execute(new GetCommentByIdQuery(dto.commentId));
     const user = await this.queryBus.execute(new GetUserByIdQuery(dto.userId));
-    const likeForComment =
-      await this.likeForCommentsRepository.findLikeForComment(
-        comment._id.toString(),
-        user.id,
-      );
+    const likeForComment = await this.likeForCommentsRepository.findLikeForComment(
+      comment.id,
+      user.id,
+    );
 
     if (!likeForComment) {
       return await this.commandBus.execute(
         new CreateLikeForCommentCommand({
           user,
-          comment,
+          commentId: comment.id,
           likeStatus: dto.likeStatus,
         }),
       );
     }
+    if (likeForComment.likeStatus === dto.likeStatus) return;
     await this.commandBus.execute(
       new UpdateLikeForCommentCommand({
-        likeForComment,
-        comment,
+        likeForCommentId: likeForComment.id,
         likeStatus: dto.likeStatus,
       }),
     );
