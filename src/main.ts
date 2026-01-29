@@ -5,6 +5,8 @@ import { CoreConfig } from './core/config/core.config';
 
 export const production = true;
 
+// теперь делаем все через typeorm
+
 async function bootstrap() {
   const appContext = await NestFactory.createApplicationContext(AppModule);
   const coreConfig = appContext.get<CoreConfig>(CoreConfig);
