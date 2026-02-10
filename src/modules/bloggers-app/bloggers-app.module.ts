@@ -31,8 +31,9 @@ import { CreateLikeForCommentUseCase } from './comments/application/usecases/cre
 import { UpdateLikeForCommentUseCase } from './comments/application/usecases/update-like-for-comment.usecase';
 import { BlogsSaController } from './blogs/api/blogs-sa.controller';
 import { GetLikeForPostQueryHandler } from './posts/application/queries/getLikeForPost.query';
+import { UserAccountsModule } from '../user-account/user-accounts.module';
 @Module({
-  imports: [],
+  imports: [UserAccountsModule],
   controllers: [BlogsController, BlogsSaController, PostsController, CommentsController],
   providers: [
     BlogsRepository,

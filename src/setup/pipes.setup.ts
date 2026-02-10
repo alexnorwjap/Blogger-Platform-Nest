@@ -1,12 +1,5 @@
-import {
-  INestApplication,
-  ValidationError,
-  ValidationPipe,
-} from '@nestjs/common';
-import {
-  DomainException,
-  Extension,
-} from 'src/core/exceptions/domain-exceptions';
+import { INestApplication, ValidationError, ValidationPipe } from '@nestjs/common';
+import { DomainException, Extension } from 'src/core/exceptions/domain-exceptions';
 import { DomainExceptionCode } from 'src/core/exceptions/filters/domain-exceptions-code';
 
 export const errorFormatter = (

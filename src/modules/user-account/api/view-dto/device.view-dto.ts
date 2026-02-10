@@ -1,4 +1,4 @@
-import { DeviceTypeORM } from '../../domain/device-typeorm.entity';
+import { Device } from '../../domain/device.entity';
 
 export class DeviceViewDto {
   ip: string;
@@ -6,7 +6,7 @@ export class DeviceViewDto {
   lastActiveDate: Date;
   deviceId: string;
 
-  static mapToView(device: DeviceTypeORM): DeviceViewDto {
+  static mapToView(device: Device): DeviceViewDto {
     const dto = new DeviceViewDto();
 
     dto.ip = device.ip;

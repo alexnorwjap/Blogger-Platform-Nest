@@ -2,8 +2,6 @@ import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { EmailDto } from 'src/modules/user-account/dto/email.dto';
 import { UserRepository } from 'src/modules/user-account/infrastructure/user.repository';
 import { EmailService } from 'src/modules/notifications/email.service';
-import { randomUUID } from 'node:crypto';
-import { add } from 'date-fns';
 
 class PasswordRecoveryCodeCommand {
   constructor(public readonly dto: EmailDto) {}
@@ -17,17 +15,14 @@ class PasswordRecoveryCodeUseCase implements ICommandHandler<PasswordRecoveryCod
   ) {}
 
   async execute({ dto }: PasswordRecoveryCodeCommand) {
-    const user = await this.userRepository.getuserByEmail(dto.email);
+    const user = await this.userRepository.getUserByEmail(dto.email);
     if (!user) return;
 
-    const recoveryCode = randomUUID();
-    await this.userRepository.updateUser(user.id, {
-      recoveryCode: recoveryCode,
-      recoveryCodeExpirationDate: add(new Date(), { minutes: 15 }),
-    });
+    user.updateRecoveryCode();
+    await this.userRepository.save(user);
 
     this.emailService
-      .sendPasswordRecoveryEmail(user.email, recoveryCode)
+      .sendPasswordRecoveryEmail(user.email, user.recoveryCode!)
       .catch(console.error);
   }
 }

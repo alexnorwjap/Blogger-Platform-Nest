@@ -1,8 +1,6 @@
 import { ICommandHandler } from '@nestjs/cqrs';
 import { CommandHandler } from '@nestjs/cqrs';
 import { DeviceRepository } from 'src/modules/user-account/infrastructure/device.repository';
-import { QueryBus } from '@nestjs/cqrs';
-import { GetDeviceByIdNotFoundQuery } from '../../queries/device/get-device.not-found.query';
 import { DomainException } from 'src/core/exceptions/domain-exceptions';
 import { DomainExceptionCode } from 'src/core/exceptions/filters/domain-exceptions-code';
 import RefreshTokenContextDto from 'src/modules/user-account/guards/dto/refresh-token-context.dto';
@@ -16,23 +14,22 @@ class DeleteDeviceCommand {
 
 @CommandHandler(DeleteDeviceCommand)
 class DeleteDeviceUseCase implements ICommandHandler<DeleteDeviceCommand> {
-  constructor(
-    private readonly deviceRepository: DeviceRepository,
-    private readonly queryBus: QueryBus,
-  ) {}
+  constructor(private readonly deviceRepository: DeviceRepository) {}
 
   async execute({ userContextDto, deviceId }: DeleteDeviceCommand) {
-    const device = await this.queryBus.execute(
-      new GetDeviceByIdNotFoundQuery(deviceId),
-    );
+    const device = await this.deviceRepository.getDeviceById(deviceId);
+    if (!device) {
+      throw new DomainException({
+        code: DomainExceptionCode.NotFound,
+      });
+    }
     if (device.userId !== userContextDto.userId) {
       throw new DomainException({
         code: DomainExceptionCode.Forbidden,
       });
     }
-    await this.deviceRepository.updateDevice(device.id, {
-      deletedAt: new Date(),
-    });
+    device.softDelete();
+    await this.deviceRepository.save(device);
   }
 }
 

@@ -1,12 +1,11 @@
-import { UserTypeORM } from '../../domain/user-typeorm.entity';
-
+import { User } from '../../domain/user.entity';
 export class UserViewDto {
   id: string;
   login: string;
   email: string;
   createdAt: Date;
 
-  static mapToView(user: UserTypeORM): UserViewDto {
+  static mapToView(user: User): UserViewDto {
     const dto = new UserViewDto();
 
     dto.id = user.id;

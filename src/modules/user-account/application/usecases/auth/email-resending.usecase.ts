@@ -1,14 +1,9 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
-import { randomUUID } from 'node:crypto';
-import {
-  DomainException,
-  Extension,
-} from 'src/core/exceptions/domain-exceptions';
+import { DomainException, Extension } from 'src/core/exceptions/domain-exceptions';
 import { DomainExceptionCode } from 'src/core/exceptions/filters/domain-exceptions-code';
 import { EmailService } from 'src/modules/notifications/email.service';
 import { EmailDto } from 'src/modules/user-account/dto/email.dto';
 import { UserRepository } from 'src/modules/user-account/infrastructure/user.repository';
-import { add } from 'date-fns';
 
 class EmailResendingCommand {
   constructor(public readonly dto: EmailDto) {}
@@ -22,7 +17,7 @@ class EmailResendingUseCase implements ICommandHandler<EmailResendingCommand> {
   ) {}
 
   async execute({ dto }: EmailResendingCommand) {
-    const user = await this.userRepository.getuserByEmail(dto.email);
+    const user = await this.userRepository.getUserByEmail(dto.email);
     if (!user || user.isEmailConfirmed) {
       throw new DomainException({
         code: DomainExceptionCode.BadRequest,
@@ -31,16 +26,10 @@ class EmailResendingUseCase implements ICommandHandler<EmailResendingCommand> {
       });
     }
 
-    const confirmationCode = randomUUID();
+    user.updateConfirmationCode();
+    await this.userRepository.save(user);
 
-    await this.userRepository.updateUser(user.id, {
-      confirmationCode: confirmationCode,
-      confirmationExpirationDate: add(new Date(), { minutes: 15 }),
-    });
-
-    this.emailService
-      .sendConfirmationEmail(user.email, confirmationCode)
-      .catch(console.error);
+    this.emailService.sendConfirmationEmail(user.email, user.confirmationCode).catch(console.error);
   }
 }
 

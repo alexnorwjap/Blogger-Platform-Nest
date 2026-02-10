@@ -35,9 +35,12 @@ import { DeviceQueryRepository } from './infrastructure/query/device.query-repos
 import { RefreshJwtStrategy } from './guards/cookie/refresh-jwt.strategy';
 import { RefreshTokenUseCase } from './application/usecases/auth/refresh-token.usecase';
 import { GetDeviceByIdNotFoundQueryHandler } from './application/queries/device/get-device.not-found.query';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { User } from './domain/user.entity';
+import { Device } from './domain/device.entity';
 
 @Module({
-  imports: [NotificationsModule],
+  imports: [NotificationsModule, TypeOrmModule.forFeature([User, Device])],
   controllers: [UserController, AuthController, DeviceController],
   providers: [
     // User
@@ -103,6 +106,6 @@ import { GetDeviceByIdNotFoundQueryHandler } from './application/queries/device/
       inject: [CoreConfig],
     },
   ],
-  exports: [JwtStrategy, BasicStrategy, GetUserByIdQueryHandler],
+  exports: [JwtStrategy, BasicStrategy, GetUserByIdQueryHandler, UserRepository],
 })
 export class UserAccountsModule {}
