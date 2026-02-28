@@ -1,12 +1,10 @@
-import {
-  Command,
-  CommandHandler,
-  ICommandHandler,
-  QueryBus,
-} from '@nestjs/cqrs';
+import { Command, CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { CreatePostInputDto } from '../../dto/create-post.dto';
 import { PostsRepository } from '../../infrastructure/posts.repository';
-import { GetBlogByIdQuery } from 'src/modules/bloggers-app/blogs/application/queries/get-blog.query';
+import { DomainException } from 'src/core/exceptions/domain-exceptions';
+import { BlogsRepository } from 'src/modules/bloggers-app/blogs/infrastructure/blogs.repository';
+import { DomainExceptionCode } from 'src/core/exceptions/filters/domain-exceptions-code';
+import { Post } from '../../domain/post.entity';
 
 class CreatePostCommand extends Command<{ postId: string }> {
   constructor(public readonly dto: CreatePostInputDto) {
@@ -18,20 +16,25 @@ class CreatePostCommand extends Command<{ postId: string }> {
 class CreatePostUseCase implements ICommandHandler<CreatePostCommand> {
   constructor(
     private postsRepository: PostsRepository,
-    private readonly queryBus: QueryBus,
+    private readonly blogsRepository: BlogsRepository,
   ) {}
   async execute({ dto }: CreatePostCommand) {
-    const blog = await this.queryBus.execute(new GetBlogByIdQuery(dto.blogId));
-
-    const postId = await this.postsRepository.createPost({
+    const blog = await this.blogsRepository.getBlogById(dto.blogId);
+    if (!blog) {
+      throw new DomainException({
+        code: DomainExceptionCode.NotFound,
+      });
+    }
+    const post = Post.createInstance({
       title: dto.title,
       shortDescription: dto.shortDescription,
       content: dto.content,
-      blogId: blog.id,
-      blogName: blog.name,
+      blogId: dto.blogId,
     });
+    await this.postsRepository.save(post);
+
     return {
-      postId,
+      postId: post.id,
     };
   }
 }

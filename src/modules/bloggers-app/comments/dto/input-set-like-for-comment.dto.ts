@@ -1,4 +1,4 @@
-class InputSetLikeForCommentDto {
+class LikeForCommentDto {
   userId: string;
   commentId: string;
   likeStatus: string;
@@ -11,4 +11,4 @@ class CreateLikeForCommentDto {
   likeStatus: string;
 }
 
-export { InputSetLikeForCommentDto, CreateLikeForCommentDto };
+export { LikeForCommentDto, CreateLikeForCommentDto };

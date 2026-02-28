@@ -1,5 +1,5 @@
 import { IsEnum } from 'class-validator';
-import { IsStringTrim } from 'src/core/decorators/validation/is-string-trim';
+import { IsStringTrim } from '../../core/decorators/validation/is-string-trim';
 
 enum LikeStatusEnum {
   Like = 'Like',
@@ -13,4 +13,4 @@ class UpdateLikeInputDto {
   likeStatus: string;
 }
 
-export { UpdateLikeInputDto };
+export { UpdateLikeInputDto, LikeStatusEnum };

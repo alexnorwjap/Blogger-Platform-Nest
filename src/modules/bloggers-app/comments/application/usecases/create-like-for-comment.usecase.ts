@@ -1,15 +1,10 @@
 import { LikeForCommentsRepository } from '../../infrastructure/like-for-comments.repository';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
-import { UserTypeORM } from 'src/modules/user-account/domain/user-typeorm.entity';
-
-class CreateLikeForCommentDto {
-  user: UserTypeORM;
-  commentId: string;
-  likeStatus: string;
-}
+import { CommentLike } from '../../domain/like-for-comment.entity';
+import { LikeForCommentDto } from '../../dto/input-set-like-for-comment.dto';
 
 class CreateLikeForCommentCommand {
-  constructor(public readonly dto: CreateLikeForCommentDto) {}
+  constructor(public readonly dto: LikeForCommentDto) {}
 }
 
 @CommandHandler(CreateLikeForCommentCommand)
@@ -17,12 +12,8 @@ class CreateLikeForCommentUseCase implements ICommandHandler<CreateLikeForCommen
   constructor(private readonly likeForCommentsRepository: LikeForCommentsRepository) {}
 
   async execute({ dto }: CreateLikeForCommentCommand) {
-    return await this.likeForCommentsRepository.create({
-      userId: dto.user.id,
-      login: dto.user.login,
-      commentId: dto.commentId,
-      likeStatus: dto.likeStatus,
-    });
+    const likeForComment = CommentLike.createInstance(dto);
+    return await this.likeForCommentsRepository.save(likeForComment);
   }
 }
 

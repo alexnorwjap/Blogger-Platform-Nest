@@ -1,6 +1,6 @@
-import { CommandHandler, ICommandHandler, QueryBus } from '@nestjs/cqrs';
+import { CommandBus, CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { InputUpdateCommentDto } from '../../dto/updateCommentsDto';
-import { GetCommentByIdQuery } from '../queries/get-comment.query';
+import { GetCommentByIdCommand } from './get-comment.usecase';
 import { CommentsRepository } from '../../infrastructure/comments.repository';
 import { DomainException } from 'src/core/exceptions/domain-exceptions';
 import { DomainExceptionCode } from 'src/core/exceptions/filters/domain-exceptions-code';
@@ -12,18 +12,19 @@ class UpdateCommentCommand {
 @CommandHandler(UpdateCommentCommand)
 class UpdateCommentUseCase implements ICommandHandler<UpdateCommentCommand> {
   constructor(
-    private readonly queryBus: QueryBus,
+    private readonly commandBus: CommandBus,
     private readonly commentsRepository: CommentsRepository,
   ) {}
 
   async execute({ dto }: UpdateCommentCommand) {
-    const comment = await this.queryBus.execute(new GetCommentByIdQuery(dto.commentId));
-    if (comment.commentatorInfo.userId !== dto.userId) {
+    const comment = await this.commandBus.execute(new GetCommentByIdCommand(dto.commentId));
+    if (comment.userId !== dto.userId) {
       throw new DomainException({
         code: DomainExceptionCode.Forbidden,
       });
     }
-    await this.commentsRepository.updateComment(dto.commentId, { content: dto.content });
+    comment.content = dto.content;
+    await this.commentsRepository.save(comment);
   }
 }
 

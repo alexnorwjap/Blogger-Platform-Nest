@@ -1,15 +1,7 @@
-import {
-  ArgumentsHost,
-  Catch,
-  ExceptionFilter,
-  HttpStatus,
-} from '@nestjs/common';
+import { ArgumentsHost, Catch, ExceptionFilter, HttpStatus } from '@nestjs/common';
 import { DomainException } from '../domain-exceptions';
 import { DomainExceptionCode } from './domain-exceptions-code';
-import {
-  ErrorResponseBody,
-  ErrorResponseBodyForProduction,
-} from './error-response-body.type';
+import { ErrorResponseBody, ErrorResponseBodyForProduction } from './error-response-body.type';
 import { production } from 'src/main';
 import { Response, Request } from 'express';
 

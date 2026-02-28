@@ -1,51 +1,31 @@
-import { InjectDataSource } from '@nestjs/typeorm';
-import { DataSource } from 'typeorm';
-import { CreateLikeForCommentDto } from '../dto/input-set-like-for-comment.dto';
-import {
-  LikeForCommentTypeORM,
-  ToLikeForCommentEntity,
-} from '../domain/like-for-comment.typeorm.entity';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { Injectable } from '@nestjs/common';
+import { CommentLike } from '../domain/like-for-comment.entity';
 
 @Injectable()
 class LikeForCommentsRepository {
   constructor(
-    @InjectDataSource()
-    private readonly dataSource: DataSource,
+    @InjectRepository(CommentLike)
+    private readonly commentLikeRepo: Repository<CommentLike>,
   ) {}
 
-  async update(id: string, updates: Record<string, any>): Promise<void> {
-    const conditions = Object.keys(updates)
-      .map((field, index) => `"${field}" = $${index + 1}`)
-      .join(', ');
-    const params = Object.values(updates);
-
-    const query = `
-      UPDATE comment_likes 
-      SET ${conditions}, "updatedAt" = CURRENT_TIMESTAMP
-      WHERE id = $${params.length + 1}
-    `;
-
-    await this.dataSource.query(query, [...params, id]);
+  async save(likeForComment: CommentLike): Promise<void> {
+    await this.commentLikeRepo.save(likeForComment);
   }
 
-  async create(dto: CreateLikeForCommentDto) {
-    // нет необходимости возвращать что либо, т.к. не используется
-    await this.dataSource.query(
-      `INSERT INTO comment_likes ("userId", login, "commentId", "likeStatus") VALUES ($1, $2, $3, $4)`,
-      [dto.userId, dto.login, dto.commentId, dto.likeStatus],
-    );
+  async delete(id: string): Promise<void> {
+    await this.commentLikeRepo.softDelete(id);
   }
 
-  async findLikeForComment(
-    commentId: string,
-    userId: string,
-  ): Promise<LikeForCommentTypeORM | null> {
-    const result: any[] = await this.dataSource.query(
-      `SELECT * FROM comment_likes WHERE "commentId" = $1 AND "userId" = $2 AND "deletedAt" IS NULL`,
-      [commentId, userId],
-    );
-    return result.length > 0 ? ToLikeForCommentEntity.mapToEntity(result) : null;
+  async findLikeForComment(commentId: string, userId: string): Promise<CommentLike | null> {
+    return await this.commentLikeRepo.findOne({
+      where: {
+        commentId,
+        userId,
+      },
+      relations: ['user'],
+    });
   }
 }
 

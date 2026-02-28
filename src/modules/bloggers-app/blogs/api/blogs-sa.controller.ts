@@ -10,7 +10,7 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { GetBlogByIdQuery } from '../application/queries/get-blog.query';
+import { GetBlogByIdCommand } from '../application/usecases/get-blog.usecase';
 import { BlogsQueryRepository } from '../infrastructure/query/blogs.query-repository';
 import { BlogsQueryParams } from './input-dto/blogs.query-params.dto';
 import { PostsQueryParams } from '../../posts/api/input-dto/posts.query-params.dto';
@@ -25,7 +25,6 @@ import { JwtOptionalAuthGuard } from 'src/modules/user-account/guards/bearer/jwt
 import ExtractUserFromRequest from 'src/modules/user-account/guards/decorators/extract-user-from-req.decorators';
 import UserContextDto from 'src/modules/user-account/guards/dto/user.context.dto';
 import { BasicAuthGuard } from 'src/modules/user-account/guards/basic/basic-auth.guard';
-// import { Public } from 'src/modules/user-account/guards/decorators/public.decorator';
 import { InputPostForBlogReqBodyDto } from './input-dto/posts-for-blog.input-req-body.dto';
 import { IdInputUUIDDTO, PostIdInputUUIDDTO } from 'src/core/dto/id-params.dto';
 import { UpdatePostCommand } from '../../posts/application/usecases/update-post.usecase';
@@ -46,11 +45,6 @@ export class BlogsSaController {
     return await this.blogsQueryRepository.findAll(query);
   }
 
-  //   @Get(':id')
-  //   async findOne(@Param() { id }: IdInputUUIDDTO) {
-  //     return await this.blogsQueryRepository.findOne(id);
-  //   }
-
   @Post()
   async create(@Body() dto: InputBlogReqBodyDto) {
     const { blogId } = await this.commandBus.execute(new CreateBlogCommand(dto));
@@ -69,7 +63,6 @@ export class BlogsSaController {
     return await this.commandBus.execute(new DeleteBlogCommand(id));
   }
 
-  // posts for blog
   @Get(':id/posts')
   @UseGuards(JwtOptionalAuthGuard)
   async findPostsForBlog(
@@ -77,7 +70,7 @@ export class BlogsSaController {
     @Query() query: PostsQueryParams,
     @ExtractUserFromRequest() user: UserContextDto | null,
   ) {
-    const blog = await this.queryBus.execute(new GetBlogByIdQuery(id));
+    const blog = await this.commandBus.execute(new GetBlogByIdCommand(id));
     return await this.postsQueryRepository.findAll(blog.id, query, user);
   }
 
@@ -108,7 +101,7 @@ export class BlogsSaController {
     @Param() { id: blogId }: IdInputUUIDDTO,
     @Param() { postId }: PostIdInputUUIDDTO,
   ) {
-    await this.queryBus.execute(new GetBlogByIdQuery(blogId));
+    await this.commandBus.execute(new GetBlogByIdCommand(blogId));
     return await this.commandBus.execute(new DeletePostCommand(postId));
   }
 }

@@ -10,6 +10,9 @@ import { Device } from './device.entity';
 import { CreateUserDto } from '../dto/create-user.dto';
 import { randomUUID } from 'node:crypto';
 import { add } from 'date-fns';
+import { PostLike } from '../../bloggers-app/posts/domain/like-for-post.entity';
+import { Comment } from '../../bloggers-app/comments/domain/comment.entity';
+import { CommentLike } from '../../bloggers-app/comments/domain/like-for-comment.entity';
 
 @Entity('users')
 export class User {
@@ -51,6 +54,15 @@ export class User {
 
   @OneToMany(() => Device, (device) => device.user)
   devices: Device[];
+
+  @OneToMany(() => PostLike, (postLike) => postLike.user)
+  likes: PostLike[];
+
+  @OneToMany(() => Comment, (comment) => comment.user)
+  comments: Comment[];
+
+  @OneToMany(() => CommentLike, (commentLike) => commentLike.user)
+  commentLikes: CommentLike[];
 
   static createInstance(dto: CreateUserDto): User {
     const user = new User();

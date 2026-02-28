@@ -1,50 +1,29 @@
 import { Injectable } from '@nestjs/common';
-import { DataSource } from 'typeorm';
-import { InjectDataSource } from '@nestjs/typeorm';
-import { CreateCommentDto } from '../dto/createCommentDto';
-import { CommentTypeORM } from '../domain/comment-typeorm.entity';
-import { ToCommentEntity } from '../domain/comment-typeorm.entity';
+import { Repository } from 'typeorm';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Comment } from '../domain/comment.entity';
 
 @Injectable()
 class CommentsRepository {
   constructor(
-    @InjectDataSource()
-    private readonly dataSource: DataSource,
+    @InjectRepository(Comment)
+    private readonly commentRepo: Repository<Comment>,
   ) {}
 
-  async updateComment(id: string, updates: Record<string, any>): Promise<void> {
-    const conditions = Object.keys(updates)
-      .map((field, index) => `"${field}" = $${index + 1}`)
-      .join(', ');
-    const params = Object.values(updates);
-
-    const query = `
-      UPDATE comments 
-      SET ${conditions}, "updatedAt" = CURRENT_TIMESTAMP
-      WHERE id = $${params.length + 1}
-    `;
-
-    await this.dataSource.query(query, [...params, id]);
+  async save(comment: Comment): Promise<void> {
+    await this.commentRepo.save(comment);
   }
 
-  async createComment(comment: CreateCommentDto) {
-    const result: any[] = await this.dataSource.query(
-      `INSERT INTO comments (content, "postId", "userId", "userLogin")
-     VALUES ($1, $2, $3, $4)
-     RETURNING id
-    `,
-      [comment.content, comment.postId, comment.userId, comment.userLogin],
-    );
-    return result[0].id;
+  async delete(commentId: string): Promise<void> {
+    await this.commentRepo.softDelete(commentId);
   }
 
-  async getCommentById(id: string): Promise<CommentTypeORM | null> {
-    const result: any[] = await this.dataSource.query(
-      `SELECT * FROM comments WHERE id = $1 AND "deletedAt" IS NULL`,
-      [id],
-    );
-    if (result.length === 0) return null;
-    return ToCommentEntity.mapToEntity(result);
+  async getCommentById(id: string): Promise<Comment | null> {
+    const comment = await this.commentRepo.findOne({
+      where: { id },
+    });
+    if (!comment) return null;
+    return comment;
   }
 }
 
