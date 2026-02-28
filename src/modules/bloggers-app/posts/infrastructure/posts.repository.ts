@@ -1,46 +1,24 @@
 import { Injectable } from '@nestjs/common';
-import { CreatePostDto } from '../dto/create-post.dto';
-import { InjectDataSource } from '@nestjs/typeorm';
-import { DataSource } from 'typeorm';
-import { PostTypeORM, ToPostEntity } from '../domain/post-typeorm.entity';
+import { IsNull, Repository } from 'typeorm';
+import { Post } from '../domain/post.entity';
+import { InjectRepository } from '@nestjs/typeorm';
 
 @Injectable()
 export class PostsRepository {
   constructor(
-    @InjectDataSource()
-    private readonly dataSource: DataSource,
+    @InjectRepository(Post)
+    private readonly postRepo: Repository<Post>,
   ) {}
 
-  async updatePost(id: string, updates: Record<string, any>): Promise<void> {
-    const conditions = Object.keys(updates)
-      .map((field, index) => `"${field}" = $${index + 1}`)
-      .join(', ');
-    const params = Object.values(updates);
-
-    const query = `
-      UPDATE posts 
-      SET ${conditions}, "updatedAt" = CURRENT_TIMESTAMP
-      WHERE id = $${params.length + 1}
-    `;
-
-    await this.dataSource.query(query, [...params, id]);
+  async save(post: Post): Promise<Post> {
+    return await this.postRepo.save(post);
   }
-  async createPost(dto: CreatePostDto): Promise<string> {
-    const result: any[] = await this.dataSource.query(
-      `INSERT INTO posts (title, "shortDescription", content, "blogId", "blogName")
-       VALUES ($1, $2, $3, $4, $5)
-       RETURNING id
-      `,
-      [dto.title, dto.shortDescription, dto.content, dto.blogId, dto.blogName],
-    );
-    return result[0].id;
+
+  async delete(id: string): Promise<void> {
+    await this.postRepo.softDelete(id);
   }
-  async getPostById(id: string): Promise<PostTypeORM | null> {
-    const result: any[] = await this.dataSource.query(
-      `SELECT * FROM posts WHERE id = $1 AND "deletedAt" IS NULL`,
-      [id],
-    );
-    if (result.length === 0) return null;
-    return ToPostEntity.mapToEntity(result);
+
+  async getPostById(id: string): Promise<Post | null> {
+    return await this.postRepo.findOne({ where: { id, deletedAt: IsNull() } });
   }
 }

@@ -3,7 +3,6 @@ class CreatePostDto {
   shortDescription: string;
   content: string;
   blogId: string;
-  blogName: string;
 }
 
 class CreatePostInputDto {

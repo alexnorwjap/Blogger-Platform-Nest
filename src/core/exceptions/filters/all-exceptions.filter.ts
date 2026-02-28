@@ -1,9 +1,4 @@
-import {
-  ArgumentsHost,
-  Catch,
-  ExceptionFilter,
-  HttpStatus,
-} from '@nestjs/common';
+import { ArgumentsHost, Catch, ExceptionFilter, HttpStatus } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { ErrorResponseBody } from './error-response-body.type';
 import { DomainExceptionCode } from './domain-exceptions-code';
@@ -23,10 +18,7 @@ export class AllHttpExceptionsFilter implements ExceptionFilter {
     response.status(status).json(responseBody);
   }
 
-  private buildResponseBody(
-    requestUrl: string,
-    message: string,
-  ): ErrorResponseBody {
+  private buildResponseBody(requestUrl: string, message: string): ErrorResponseBody {
     if (!production) {
       return {
         timestamp: new Date().toISOString(),

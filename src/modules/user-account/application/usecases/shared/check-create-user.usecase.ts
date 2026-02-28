@@ -4,6 +4,7 @@ import { UserRepository } from '../../../infrastructure/user.repository';
 import { DomainException, Extension } from 'src/core/exceptions/domain-exceptions';
 import { DomainExceptionCode } from 'src/core/exceptions/filters/domain-exceptions-code';
 import { CryptoService } from '../../crypto.service';
+import { User } from '../../../domain/user.entity';
 
 export class CheckAndCreateCommand extends Command<string> {
   constructor(public readonly dto: CreateUserDto) {
@@ -19,7 +20,6 @@ export class CheckAndCreateUseCase implements ICommandHandler<CheckAndCreateComm
   ) {}
 
   async execute({ dto }: CheckAndCreateCommand) {
-    // TODO: Вынести в отдельный bus?
     const user = await this.userRepository.getUserByLoginOrEmail(dto.login, dto.email);
 
     if (user) {
@@ -33,14 +33,13 @@ export class CheckAndCreateUseCase implements ICommandHandler<CheckAndCreateComm
     }
 
     const hashPassword = await this.cryptoService.hashPassword(dto.password);
-    const idNewUser = await this.userRepository.createUser({
+    const newUser = User.createInstance({
       login: dto.login,
       email: dto.email,
       password: hashPassword,
     });
+    await this.userRepository.save(newUser);
 
-    // await this.userRepository.save(newUser);
-
-    return idNewUser;
+    return newUser.id;
   }
 }

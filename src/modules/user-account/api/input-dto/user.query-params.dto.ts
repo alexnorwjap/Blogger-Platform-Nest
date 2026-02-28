@@ -1,7 +1,7 @@
 import { BaseQueryParams } from 'src/core/dto/base.query-params';
 import { IsOptional } from 'class-validator';
 
-enum SortBy {
+export enum SortBy {
   CreatedAt = 'createdAt',
   Login = 'login',
   Email = 'email',

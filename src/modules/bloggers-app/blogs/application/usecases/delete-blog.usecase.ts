@@ -1,6 +1,7 @@
-import { CommandHandler, ICommandHandler, QueryBus } from '@nestjs/cqrs';
+import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { BlogsRepository } from '../../infrastructure/blogs.repository';
-import { GetBlogByIdQuery } from '../queries/get-blog.query';
+import { DomainExceptionCode } from 'src/core/exceptions/filters/domain-exceptions-code';
+import { DomainException } from 'src/core/exceptions/domain-exceptions';
 
 class DeleteBlogCommand {
   constructor(public readonly id: string) {}
@@ -8,15 +9,16 @@ class DeleteBlogCommand {
 
 @CommandHandler(DeleteBlogCommand)
 class DeleteBlogUseCase implements ICommandHandler<DeleteBlogCommand> {
-  constructor(
-    private readonly queryBus: QueryBus,
-    private readonly blogsRepository: BlogsRepository,
-  ) {}
+  constructor(private readonly blogsRepository: BlogsRepository) {}
 
   async execute({ id }: DeleteBlogCommand) {
-    await this.queryBus.execute(new GetBlogByIdQuery(id));
-
-    await this.blogsRepository.updateBlog(id, { deletedAt: new Date() });
+    const blog = await this.blogsRepository.getBlogById(id);
+    if (!blog) {
+      throw new DomainException({
+        code: DomainExceptionCode.NotFound,
+      });
+    }
+    await this.blogsRepository.delete(id);
   }
 }
 export { DeleteBlogCommand, DeleteBlogUseCase };

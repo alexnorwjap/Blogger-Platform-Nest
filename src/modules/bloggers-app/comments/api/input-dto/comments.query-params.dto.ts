@@ -1,6 +1,6 @@
 import { BaseQueryParams } from 'src/core/dto/base.query-params';
 
-enum SortBy {
+export enum SortBy {
   CreatedAt = 'createdAt',
 }
 

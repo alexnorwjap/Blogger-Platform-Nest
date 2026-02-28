@@ -1,11 +1,4 @@
-import {
-  Controller,
-  Get,
-  HttpCode,
-  Param,
-  Query,
-  UseGuards,
-} from '@nestjs/common';
+import { Controller, Get, HttpCode, Param, Query, UseGuards } from '@nestjs/common';
 import { Body, Delete, Post } from '@nestjs/common';
 import { UserQueryRepository } from '../infrastructure/query/user.query-repository';
 import { UserQueryParams } from './input-dto/user.query-params.dto';
@@ -30,9 +23,7 @@ export class UserController {
 
   @Post()
   async create(@Body() createUserDto: RegistrationDto) {
-    const { userId } = await this.commandBus.execute(
-      new CreateUserForAdminCommand(createUserDto),
-    );
+    const { userId } = await this.commandBus.execute(new CreateUserForAdminCommand(createUserDto));
 
     return await this.usersQueryRepository.findOne(userId);
   }

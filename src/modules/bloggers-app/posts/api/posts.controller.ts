@@ -5,7 +5,6 @@ import {
   Body,
   Param,
   Get,
-  // Delete,
   HttpCode,
   Query,
   UseGuards,
@@ -15,22 +14,19 @@ import { PostsQueryRepository } from '../infrastructure/query/posts.query-reposi
 import { PostsQueryParams } from './input-dto/posts.query-params.dto';
 import { CommentsQueryParams } from '../../comments/api/input-dto/comments.query-params.dto';
 import { CommentsQueryRepository } from '../../comments/infrastructure/query/comments.query-repository';
-import { IdInputUUIDDTO } from 'src/core/dto/id-params.dto';
-// import { CreatePostCommand } from '../application/usecases/create-post.usecase';
-import { CommandBus, QueryBus } from '@nestjs/cqrs';
-// import { InputPostReqBodyDto } from './input-dto/input.req-body.dto';
-// import { UpdatePostCommand } from '../application/usecases/update-post.usecase';
-// import { DeletePostCommand } from '../application/usecases/delete-post.usecase';
-import { JwtAuthGuard } from 'src/modules/user-account/guards/bearer/jwt-auth.guard';
-import ExtractUserFromRequest from 'src/modules/user-account/guards/decorators/extract-user-from-req.decorators';
-import UserContextDto from 'src/modules/user-account/guards/dto/user.context.dto';
+import { IdInputUUIDDTO } from '../../../../core/dto/id-params.dto';
+import { CommandBus } from '@nestjs/cqrs';
+import { JwtAuthGuard } from '../../../user-account/guards/bearer/jwt-auth.guard';
+import ExtractUserFromRequest from '../../../user-account/guards/decorators/extract-user-from-req.decorators';
+import UserContextDto from '../../../user-account/guards/dto/user.context.dto';
 import { InputCommentDto } from '../../comments/api/input-dto/comment.dto';
 import { CreateCommentCommand } from '../../comments/application/usecases/create-comment.usecase';
-// import { BasicAuthGuard } from 'src/modules/user-account/guards/basic/basic-auth.guard';
 import { UpdateLikeInputDto } from '../../../../core/dto/update-like-input.dto';
 import { SetLikeStatusForPostCommand } from '../application/usecases/set-like-status-for-post.usecase';
-import { JwtOptionalAuthGuard } from 'src/modules/user-account/guards/bearer/jwt-optional-auth-guard';
-import { GetPostByIdQuery } from '../application/queries/getPostById.query';
+import { JwtOptionalAuthGuard } from '../../../user-account/guards/bearer/jwt-optional-auth-guard';
+import { DomainExceptionCode } from '../../../../core/exceptions/filters/domain-exceptions-code';
+import { DomainException } from '../../../../core/exceptions/domain-exceptions';
+import { PostsRepository } from '../infrastructure/posts.repository';
 
 @Controller('posts')
 export class PostsController {
@@ -38,7 +34,7 @@ export class PostsController {
     private readonly postsQueryRepository: PostsQueryRepository,
     private readonly commentsQueryRepository: CommentsQueryRepository,
     private readonly commandBus: CommandBus,
-    private readonly queryBus: QueryBus,
+    private readonly postsRepository: PostsRepository,
   ) {}
   @Get()
   @UseGuards(JwtOptionalAuthGuard)
@@ -48,12 +44,6 @@ export class PostsController {
   ) {
     return await this.postsQueryRepository.findAll(null, query, user);
   }
-  // @Post()
-  // @UseGuards(BasicAuthGuard)
-  // async create(@Body() dto: InputPostReqBodyDto) {
-  //   const { postId } = await this.commandBus.execute(new CreatePostCommand(dto));
-  //   return await this.postsQueryRepository.findOne(postId, null);
-  // }
 
   @Get(':id')
   @UseGuards(JwtOptionalAuthGuard)
@@ -63,20 +53,6 @@ export class PostsController {
   ) {
     return await this.postsQueryRepository.findOne(id, user);
   }
-
-  // @Put(':id')
-  // @UseGuards(BasicAuthGuard)
-  // @HttpCode(204)
-  // async update(@Param() { id }: IdInputUUIDDTO, @Body() dto: InputPostReqBodyDto) {
-  //   return await this.commandBus.execute(new UpdatePostCommand(id, dto));
-  // }
-
-  // @Delete(':id')
-  // @UseGuards(BasicAuthGuard)
-  // @HttpCode(204)
-  // async delete(@Param() { id }: IdInputUUIDDTO) {
-  //   return await this.commandBus.execute(new DeletePostCommand(id));
-  // }
 
   @Put(':id/like-status')
   @HttpCode(HttpStatus.NO_CONTENT)
@@ -95,7 +71,6 @@ export class PostsController {
     );
   }
 
-  // comments for posts
   @Get(':id/comments')
   @UseGuards(JwtOptionalAuthGuard)
   async getComments(
@@ -103,7 +78,12 @@ export class PostsController {
     @Param() { id }: IdInputUUIDDTO,
     @ExtractUserFromRequest() user: UserContextDto | null,
   ) {
-    await this.queryBus.execute(new GetPostByIdQuery(id));
+    const post = await this.postsRepository.getPostById(id);
+    if (!post) {
+      throw new DomainException({
+        code: DomainExceptionCode.NotFound,
+      });
+    }
     return await this.commentsQueryRepository.findAllbyId(id, query, user);
   }
 

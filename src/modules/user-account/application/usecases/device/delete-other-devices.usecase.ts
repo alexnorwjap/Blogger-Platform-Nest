@@ -1,7 +1,8 @@
-import { ICommandHandler, QueryBus } from '@nestjs/cqrs';
+import { ICommandHandler } from '@nestjs/cqrs';
 import { DeviceRepository } from 'src/modules/user-account/infrastructure/device.repository';
-import { GetDeviceByIdQuery } from '../../queries/device/get-device.unauthorized.query';
 import { CommandHandler } from '@nestjs/cqrs';
+import { DomainException } from 'src/core/exceptions/domain-exceptions';
+import { DomainExceptionCode } from 'src/core/exceptions/filters/domain-exceptions-code';
 
 class RefreshTokenDto {
   userId: string;
@@ -14,17 +15,16 @@ class DeleteOtherDevicesCommand {
 
 @CommandHandler(DeleteOtherDevicesCommand)
 class DeleteOtherDevicesUseCase implements ICommandHandler<DeleteOtherDevicesCommand> {
-  constructor(
-    private readonly deviceRepository: DeviceRepository,
-    private readonly queryBus: QueryBus,
-  ) {}
+  constructor(private readonly deviceRepository: DeviceRepository) {}
 
   async execute({ dto }: DeleteOtherDevicesCommand) {
-    await this.queryBus.execute(new GetDeviceByIdQuery(dto.deviceId));
-    await this.deviceRepository.markOtherDevicesAsDeleted(
-      dto.userId,
-      dto.deviceId,
-    );
+    const device = await this.deviceRepository.getDeviceById(dto.deviceId);
+    if (!device) {
+      throw new DomainException({
+        code: DomainExceptionCode.Unauthorized,
+      });
+    }
+    await this.deviceRepository.markOtherDevicesAsDeleted(dto.userId, dto.deviceId);
   }
 }
 

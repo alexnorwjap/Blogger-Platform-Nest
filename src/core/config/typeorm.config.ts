@@ -10,5 +10,6 @@ export function getTypeOrmConfig(coreConfig: CoreConfig): TypeOrmModuleOptions {
     password: coreConfig.postgresPassword,
     database: coreConfig.postgresDatabase,
     autoLoadEntities: true,
+    synchronize: false,
   };
 }

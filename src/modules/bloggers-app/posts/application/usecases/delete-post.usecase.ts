@@ -1,6 +1,7 @@
-import { CommandHandler, ICommandHandler, QueryBus } from '@nestjs/cqrs';
+import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { PostsRepository } from '../../infrastructure/posts.repository';
-import { GetPostByIdQuery } from '../queries/getPostById.query';
+import { DomainException } from 'src/core/exceptions/domain-exceptions';
+import { DomainExceptionCode } from 'src/core/exceptions/filters/domain-exceptions-code';
 
 class DeletePostCommand {
   constructor(public readonly id: string) {}
@@ -8,14 +9,16 @@ class DeletePostCommand {
 
 @CommandHandler(DeletePostCommand)
 class DeletePostUseCase implements ICommandHandler<DeletePostCommand> {
-  constructor(
-    private readonly queryBus: QueryBus,
-    private readonly postsRepository: PostsRepository,
-  ) {}
+  constructor(private readonly postsRepository: PostsRepository) {}
 
   async execute({ id }: DeletePostCommand) {
-    await this.queryBus.execute(new GetPostByIdQuery(id));
-    await this.postsRepository.updatePost(id, { deletedAt: new Date() });
+    const post = await this.postsRepository.getPostById(id);
+    if (!post) {
+      throw new DomainException({
+        code: DomainExceptionCode.NotFound,
+      });
+    }
+    await this.postsRepository.delete(id);
   }
 }
 

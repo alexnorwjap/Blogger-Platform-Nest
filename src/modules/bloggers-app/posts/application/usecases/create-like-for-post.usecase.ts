@@ -1,6 +1,7 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { CreateLikeForPostDto } from '../../dto/create-like-for-post.dto';
 import { LikeForPostRepository } from '../../infrastructure/like-for-post.repository';
+import { PostLike } from '../../domain/like-for-post.entity';
 
 class CreateLikeForPostCommand {
   constructor(public readonly dto: CreateLikeForPostDto) {}
@@ -11,12 +12,8 @@ class CreateLikeForPostUseCase implements ICommandHandler<CreateLikeForPostComma
   constructor(private readonly likeForPostRepository: LikeForPostRepository) {}
 
   async execute({ dto }: CreateLikeForPostCommand) {
-    await this.likeForPostRepository.create({
-      userId: dto.userId,
-      login: dto.login,
-      postId: dto.postId,
-      likeStatus: dto.likeStatus,
-    });
+    const likeForPost = PostLike.createInstance(dto);
+    await this.likeForPostRepository.save(likeForPost);
   }
 }
 

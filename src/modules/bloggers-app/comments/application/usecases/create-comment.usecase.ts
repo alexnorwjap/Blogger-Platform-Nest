@@ -1,9 +1,12 @@
-import { Command, QueryBus } from '@nestjs/cqrs';
+import { Command } from '@nestjs/cqrs';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
-import { GetUserByIdQuery } from 'src/modules/user-account/application/queries/user/getUserById.query';
 import { CommentsRepository } from '../../infrastructure/comments.repository';
 import { InputCreateCommentDto } from '../../dto/createCommentDto';
-import { GetPostByIdQuery } from 'src/modules/bloggers-app/posts/application/queries/getPostById.query';
+import { UserRepository } from 'src/modules/user-account/infrastructure/user.repository';
+import { DomainExceptionCode } from 'src/core/exceptions/filters/domain-exceptions-code';
+import { DomainException } from 'src/core/exceptions/domain-exceptions';
+import { PostsRepository } from 'src/modules/bloggers-app/posts/infrastructure/posts.repository';
+import { Comment } from '../../domain/comment.entity';
 
 class CreateCommentCommand extends Command<{ commentId: string }> {
   constructor(public readonly dto: InputCreateCommentDto) {
@@ -15,21 +18,33 @@ class CreateCommentCommand extends Command<{ commentId: string }> {
 class CreateCommentUseCase implements ICommandHandler<CreateCommentCommand> {
   constructor(
     private readonly commentsRepository: CommentsRepository,
-    private readonly queryBus: QueryBus,
+    private readonly userRepository: UserRepository,
+    private readonly postRepository: PostsRepository,
   ) {}
 
   async execute({ dto }: CreateCommentCommand) {
-    await this.queryBus.execute(new GetPostByIdQuery(dto.postId));
-    const user = await this.queryBus.execute(new GetUserByIdQuery(dto.userId));
-    const newComment = await this.commentsRepository.createComment({
+    const post = await this.postRepository.getPostById(dto.postId);
+    if (!post) {
+      throw new DomainException({
+        code: DomainExceptionCode.NotFound,
+      });
+    }
+
+    const user = await this.userRepository.getUserById(dto.userId);
+    if (!user) {
+      throw new DomainException({
+        code: DomainExceptionCode.NotFound,
+      });
+    }
+    const newComment = Comment.createInstance({
       content: dto.content,
       postId: dto.postId,
-      userId: user.id,
-      userLogin: user.login,
+      userId: dto.userId,
     });
+    await this.commentsRepository.save(newComment);
 
     return {
-      commentId: newComment,
+      commentId: newComment.id,
     };
   }
 }

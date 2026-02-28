@@ -20,6 +20,8 @@ class RegistrationUseCase implements ICommandHandler<RegistrationCommand> {
 
   async execute({ dto }: RegistrationCommand) {
     const userId = await this.commandBus.execute(new CheckAndCreateCommand(dto));
+
+    // TODO : нужно ли? если после создания у меня будет уже сущность?
     const newUser: UserTypeORM = await this.queryBus.execute(new GetUserByIdQuery(userId));
 
     this.emailService
